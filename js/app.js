@@ -2,7 +2,7 @@
  * App — Bootstrap, state management, toolbar logic
  */
 
-import { initCanvas, getCanvas, fitToScreen, getZoom } from './canvas-manager.js';
+import { initCanvas, getCanvas, fitToScreen, rotatePlan, getZoom } from './canvas-manager.js';
 import { initTouchHandler } from './touch-handler.js';
 import { initPdfLoader, goToPage, getCurrentPage, getTotalPages, isPdf } from './pdf-loader.js';
 import { createActorIcon, renderActorProperties } from './actor-icon.js';
@@ -207,6 +207,7 @@ function setupTopBar() {
 // ── Status Bar ──
 function setupStatusBar() {
   document.getElementById('btn-fit').addEventListener('click', fitToScreen);
+  document.getElementById('btn-rotate').addEventListener('click', rotatePlan);
 
   document.getElementById('btn-prev-page').addEventListener('click', () => {
     const page = getCurrentPage();

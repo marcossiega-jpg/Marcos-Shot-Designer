@@ -74,8 +74,15 @@ export function fitToScreen() {
   // If there's a background image, fit to that
   const bg = canvas.backgroundImage;
   if (bg) {
-    const imgW = bg.width * (bg.scaleX || 1);
-    const imgH = bg.height * (bg.scaleY || 1);
+    const rawW = bg.width * (bg.scaleX || 1);
+    const rawH = bg.height * (bg.scaleY || 1);
+
+    // Account for rotation — at 90° or 270° width and height swap
+    const angle = ((bg.angle || 0) % 360 + 360) % 360;
+    const isRotated = (angle === 90 || angle === 270);
+    const imgW = isRotated ? rawH : rawW;
+    const imgH = isRotated ? rawW : rawH;
+
     const scaleX = (wrapperW * 0.9) / imgW;
     const scaleY = (wrapperH * 0.9) / imgH;
     const scale = Math.min(scaleX, scaleY);
@@ -95,6 +102,19 @@ export function fitToScreen() {
   }
 
   updateZoomDisplay();
+  canvas.requestRenderAll();
+}
+
+export function rotatePlan() {
+  const bg = canvas.backgroundImage;
+  if (!bg) return;
+
+  // Rotate 90° clockwise
+  const currentAngle = bg.angle || 0;
+  bg.set({ angle: currentAngle + 90 });
+
+  // After rotation, re-fit to screen
+  fitToScreen();
   canvas.requestRenderAll();
 }
 
