@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1e1e1e">
+  <title>Shot Designer</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <!-- Top Bar -->
+  <header id="top-bar">
+    <div class="top-left">
+      <span class="app-name">Shot Designer</span>
+    </div>
+    <div class="top-center">
+      <button id="btn-undo" class="icon-btn" title="Undo" disabled>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h13a4 4 0 0 1 0 8H7"/><path d="M3 10l4-4M3 10l4 4"/></svg>
+      </button>
+      <button id="btn-redo" class="icon-btn" title="Redo" disabled>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10H8a4 4 0 0 0 0 8h9"/><path d="M21 10l-4-4M21 10l-4 4"/></svg>
+      </button>
+    </div>
+    <div class="top-right">
+      <div class="dropdown" id="export-dropdown">
+        <button id="btn-export" class="icon-btn" title="Export">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Export</span>
+        </button>
+        <div class="dropdown-menu">
+          <button id="export-png">Export PNG</button>
+          <button id="export-pdf">Export PDF</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <div id="main">
+    <!-- Left Toolbar -->
+    <aside id="toolbar">
+      <button class="tool-btn active" data-tool="select" title="Select">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M4 2l12 16-4.4-1.6L8 22l-1.2-3.6L2 18z"/></svg>
+      </button>
+      <div style="position:relative">
+        <button class="tool-btn" data-tool="actor" title="Actor">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 8 0v2"/></svg>
+        </button>
+        <!-- Actor config popover -->
+        <div id="actor-popover" class="tool-popover hidden">
+          <div class="popover-section">
+            <label class="popover-label">Label</label>
+            <input type="text" id="actor-config-label" class="popover-input" value="A" maxlength="4" placeholder="ACT1">
+          </div>
+          <div class="popover-section">
+            <label class="popover-label">Color</label>
+            <div class="popover-swatches" id="actor-config-colors">
+              <div class="popover-swatch selected" style="background:#e74c3c" data-color="#e74c3c"></div>
+              <div class="popover-swatch" style="background:#3498db" data-color="#3498db"></div>
+              <div class="popover-swatch" style="background:#2ecc71" data-color="#2ecc71"></div>
+              <div class="popover-swatch" style="background:#f1c40f" data-color="#f1c40f"></div>
+              <div class="popover-swatch" style="background:#e67e22" data-color="#e67e22"></div>
+              <div class="popover-swatch" style="background:#9b59b6" data-color="#9b59b6"></div>
+              <div class="popover-swatch" style="background:#1abc9c" data-color="#1abc9c"></div>
+              <div class="popover-swatch" style="background:#e91e63" data-color="#e91e63"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="position:relative">
+        <button class="tool-btn" data-tool="camera" title="Camera">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="15" height="12" rx="2"/><polygon points="22 8 17 12 22 16"/></svg>
+        </button>
+        <!-- Camera config popover -->
+        <div id="camera-popover" class="tool-popover hidden">
+          <div class="popover-section">
+            <label class="popover-label">Label</label>
+            <input type="text" id="camera-config-label" class="popover-input" value="" maxlength="4" placeholder="CAM1">
+          </div>
+        </div>
+      </div>
+      <div style="position:relative">
+        <button class="tool-btn" data-tool="text" title="Text">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9.5" y1="4" x2="9.5" y2="20"/><line x1="14.5" y1="4" x2="14.5" y2="20"/><line x1="7" y1="20" x2="17" y2="20"/></svg>
+        </button>
+        <!-- Text config popover -->
+        <div id="text-popover" class="tool-popover hidden">
+          <div class="popover-section">
+            <label class="popover-label">Color</label>
+            <div class="popover-swatches" id="text-config-colors">
+              <div class="popover-swatch selected" style="background:#ffffff;border:1px solid #666" data-color="#ffffff"></div>
+              <div class="popover-swatch" style="background:#e74c3c" data-color="#e74c3c"></div>
+              <div class="popover-swatch" style="background:#3498db" data-color="#3498db"></div>
+              <div class="popover-swatch" style="background:#2ecc71" data-color="#2ecc71"></div>
+              <div class="popover-swatch" style="background:#f1c40f" data-color="#f1c40f"></div>
+              <div class="popover-swatch" style="background:#e67e22" data-color="#e67e22"></div>
+              <div class="popover-swatch" style="background:#9b59b6" data-color="#9b59b6"></div>
+              <div class="popover-swatch" style="background:#000000" data-color="#000000"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tool-divider"></div>
+      <button class="tool-btn" id="btn-load-plan" title="Load Floor Plan">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </button>
+      <button class="tool-btn" id="btn-delete" title="Delete Selected">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button>
+    </aside>
+
+    <!-- Canvas Wrapper -->
+    <div id="canvas-wrapper">
+      <canvas id="main-canvas"></canvas>
+    </div>
+
+    <!-- Right Properties Panel -->
+    <aside id="properties-panel" class="hidden">
+      <div class="panel-header">
+        <span>Properties</span>
+        <button id="btn-close-panel" class="icon-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="panel-content">
+        <!-- Dynamic content inserted by JS -->
+      </div>
+    </aside>
+  </div>
+
+  <!-- Status Bar -->
+  <footer id="status-bar">
+    <div class="status-left">
+      <span id="zoom-display">100%</span>
+      <button id="btn-fit" class="status-btn" title="Fit to screen">Fit</button>
+    </div>
+    <div class="status-center">
+      <span id="page-indicator" class="hidden">Page <span id="page-current">1</span> / <span id="page-total">1</span></span>
+      <button id="btn-prev-page" class="status-btn hidden" title="Previous page">&lt;</button>
+      <button id="btn-next-page" class="status-btn hidden" title="Next page">&gt;</button>
+    </div>
+    <div class="status-right">
+      <span id="status-message"></span>
+    </div>
+  </footer>
+
+  <!-- Hidden file input for loading plans -->
+  <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg" hidden>
+
+  <!-- CDN Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/fabric@6.0.2/dist/index.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+
+  <!-- App Scripts (ES Modules) -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
