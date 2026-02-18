@@ -113,9 +113,9 @@ function setInteractive(enabled) {
 function getToolStatus(tool) {
   switch (tool) {
     case 'select': return 'Select mode — drag actors/cameras to create movement trails';
-    case 'actor': return 'Actor mode — pick color/label, then tap to place';
-    case 'camera': return 'Camera mode — tap to place camera';
-    case 'text': return 'Text mode — tap to place text';
+    case 'actor': return 'Actor mode — pick color/label, then double-tap to place';
+    case 'camera': return 'Camera mode — double-tap to place camera';
+    case 'text': return 'Text mode — double-tap to place text, use Apple Pencil to write';
     default: return '';
   }
 }
@@ -243,47 +243,69 @@ function handlePageChange(current, total) {
 
 // ── Canvas Events ──
 function setupCanvasEvents(canvas) {
-  // Click/tap on canvas (for placing objects)
+  // Double-tap tracking for placement and properties
+  let lastPlaceTapTime = 0;
+  let lastPlaceTapPos = null;
+
   canvas.on('mouse:down', (opt) => {
+    const now = Date.now();
+    const pointer = canvas.getPointer(opt.e);
+
     // In select mode: clicking a trail line selects its control point for dragging
     if (currentTool === 'select' && opt.target && opt.target.objectType === 'trailLine') {
       selectTrailControlPoint(opt.target);
+      lastPlaceTapTime = 0;
       return;
     }
 
-    // Ignore if clicking an existing object in placement modes
-    if (opt.target) return;
-
-    const pointer = canvas.getPointer(opt.e);
-
-    switch (currentTool) {
-      case 'actor':
-        placeActor(pointer.x, pointer.y);
-        break;
-      case 'camera':
-        placeCamera(pointer.x, pointer.y);
-        break;
-      case 'text':
-        placeText(pointer.x, pointer.y, { color: textConfig.color });
-        setTool('select');
-        break;
+    // Double-tap on existing object → open properties (in any mode)
+    if (opt.target && now - lastPlaceTapTime < 400) {
+      openProperties(opt.target);
+      lastPlaceTapTime = 0;
+      return;
     }
+
+    // For placement modes: require double-tap on empty canvas
+    if (!opt.target && (currentTool === 'actor' || currentTool === 'camera' || currentTool === 'text')) {
+      // Check if this is a double-tap (second tap within 400ms, near same spot)
+      if (now - lastPlaceTapTime < 400 && lastPlaceTapPos) {
+        const dx = pointer.x - lastPlaceTapPos.x;
+        const dy = pointer.y - lastPlaceTapPos.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 30) {
+          // Double-tap confirmed → place the object
+          switch (currentTool) {
+            case 'actor':
+              placeActor(pointer.x, pointer.y);
+              break;
+            case 'camera':
+              placeCamera(pointer.x, pointer.y);
+              break;
+            case 'text':
+              placeText(pointer.x, pointer.y, { color: textConfig.color });
+              setTool('select');
+              break;
+          }
+          lastPlaceTapTime = 0;
+          lastPlaceTapPos = null;
+          return;
+        }
+      }
+
+      // First tap — record it, show status hint
+      lastPlaceTapTime = now;
+      lastPlaceTapPos = { x: pointer.x, y: pointer.y };
+      setStatus('Double-tap to place ' + currentTool);
+      return;
+    }
+
+    lastPlaceTapTime = now;
+    lastPlaceTapPos = pointer ? { x: pointer.x, y: pointer.y } : null;
   });
 
   // Selection change
   canvas.on('selection:created', handleSelection);
   canvas.on('selection:updated', handleSelection);
   canvas.on('selection:cleared', handleSelectionCleared);
-
-  // Double-tap to open properties
-  let lastTapTime = 0;
-  canvas.on('mouse:down', (opt) => {
-    const now = Date.now();
-    if (now - lastTapTime < 350 && opt.target) {
-      openProperties(opt.target);
-    }
-    lastTapTime = now;
-  });
 }
 
 // ── Object Placement ──
@@ -407,6 +429,30 @@ function showContextMenu(x, y, target) {
     removeContextMenu();
     openProperties(target);
   });
+
+  // Rotate option for actors and cameras
+  if (target.objectType === 'actor' || target.objectType === 'camera') {
+    const rotateBtn = document.createElement('button');
+    rotateBtn.textContent = 'Rotate';
+    rotateBtn.addEventListener('click', () => {
+      removeContextMenu();
+      const canvas = getCanvas();
+      // Enable rotation controls on this object
+      target.set({
+        hasControls: true,
+        lockRotation: false,
+      });
+      target.setControlsVisibility({
+        tl: false, tr: false, bl: false, br: false,
+        ml: false, mr: false, mt: false, mb: false,
+        mtr: true, // rotation handle
+      });
+      canvas.setActiveObject(target);
+      canvas.requestRenderAll();
+      setStatus('Drag the rotation handle to rotate — tap elsewhere when done');
+    });
+    menu.appendChild(rotateBtn);
+  }
 
   const deleteBtn = document.createElement('button');
   deleteBtn.textContent = 'Delete';
