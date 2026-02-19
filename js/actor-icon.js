@@ -9,7 +9,16 @@ const ACTOR_RADIUS = 20;
 const PRESET_COLORS = [
   '#e74c3c', '#3498db', '#2ecc71', '#f1c40f',
   '#e67e22', '#9b59b6', '#1abc9c', '#e91e63',
+  '#ffffff', '#808080', '#1a3a5c', '#1e5631',
+  '#8b4513', '#d4b896',
 ];
+
+function isLightColor(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.8;
+}
 
 function makeHalfCirclePath(r, side) {
   // Left half: arc from top to bottom on the left side
@@ -25,7 +34,8 @@ function makeHalfCirclePath(r, side) {
 
 export function createActorIcon(x, y, options = {}) {
   const color = options.color || PRESET_COLORS[0];
-  const label = options.label || 'A';
+  const label = options.label ?? 'A';
+  const borderColor = isLightColor(color) ? '#333333' : color;
   const r = ACTOR_RADIUS;
 
   // Left half (colored) — semicircle path
@@ -48,7 +58,7 @@ export function createActorIcon(x, y, options = {}) {
   const border = new fabric.Circle({
     radius: r,
     fill: 'transparent',
-    stroke: color,
+    stroke: borderColor,
     strokeWidth: 2.5,
     originX: 'center',
     originY: 'center',
@@ -90,8 +100,9 @@ export function updateActorColor(actor, newColor) {
   if (!actor || actor.objectType !== 'actor') return;
   const objects = actor.getObjects();
   // objects[0] = left half path, objects[2] = border circle
+  const borderColor = isLightColor(newColor) ? '#333333' : newColor;
   objects[0].set('fill', newColor);
-  objects[2].set('stroke', newColor);
+  objects[2].set('stroke', borderColor);
   actor.actorColor = newColor;
   actor.dirty = true;
   getCanvas().requestRenderAll();
@@ -124,7 +135,7 @@ export function renderActorProperties(actor) {
       <div class="color-swatches" id="actor-colors">
         ${PRESET_COLORS.map(c => `
           <div class="color-swatch ${c === actor.actorColor ? 'selected' : ''}"
-               style="background:${c}" data-color="${c}"></div>
+               style="background:${c}${c === '#ffffff' ? ';border:1px solid #666' : ''}" data-color="${c}"></div>
         `).join('')}
       </div>
     </div>

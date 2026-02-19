@@ -10,14 +10,14 @@ import { createCameraIcon, renderCameraProperties } from './camera-icon.js';
 import { createMovementArrow, removeArrow, renderArrowProperties } from './movement-arrow.js';
 import { placeText, renderTextProperties } from './text-tool.js';
 import { initRoster, clearActiveCharacter } from './character-roster.js';
-import { exportPNG, exportPDF } from './export-manager.js';
+import { exportPNG, exportPDF, shareToScriptation } from './export-manager.js';
 import { initHistory, undo, redo, saveState } from './history-manager.js';
 
 // ── State ──
 let currentTool = 'select';
 let arrowStartPoint = null;
-let actorConfig = { color: '#e74c3c', label: 'A' };
-let cameraConfig = { color: '#3498db', label: '' };
+let actorConfig = { color: '#ffffff', label: '' };
+let cameraConfig = { color: '#ffffff', label: '' };
 let textConfig = { color: '#ffffff' };
 
 // ── Init ──
@@ -152,6 +152,11 @@ function setupTopBar() {
 
   document.addEventListener('click', () => {
     dropdown.classList.remove('open');
+  });
+
+  document.getElementById('export-scriptation').addEventListener('click', () => {
+    dropdown.classList.remove('open');
+    shareToScriptation();
   });
 
   document.getElementById('export-png').addEventListener('click', () => {

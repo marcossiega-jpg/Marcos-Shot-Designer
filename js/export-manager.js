@@ -27,6 +27,56 @@ export function exportPNG() {
   downloadDataUrl(dataUrl, 'shot-design.png');
 }
 
+export async function shareToScriptation() {
+  const canvas = getCanvas();
+  prepareForExport(canvas);
+
+  const bounds = getContentBounds(canvas);
+  const multiplier = 2;
+
+  const dataUrl = canvas.toDataURL({
+    format: 'png',
+    quality: 1,
+    multiplier,
+    left: bounds.left,
+    top: bounds.top,
+    width: bounds.width,
+    height: bounds.height,
+  });
+
+  restoreAfterExport(canvas);
+
+  const isLandscape = bounds.width > bounds.height;
+  const orientation = isLandscape ? 'landscape' : 'portrait';
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({
+    orientation,
+    unit: 'px',
+    format: [bounds.width, bounds.height],
+  });
+
+  pdf.addImage(dataUrl, 'PNG', 0, 0, bounds.width, bounds.height);
+
+  const pdfBlob = pdf.output('blob');
+  const pdfFile = new File([pdfBlob], 'shot-design.pdf', { type: 'application/pdf' });
+
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+    try {
+      await navigator.share({
+        files: [pdfFile],
+        title: 'Shot Design',
+      });
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        pdf.save('shot-design.pdf');
+      }
+    }
+  } else {
+    pdf.save('shot-design.pdf');
+  }
+}
+
 export function exportPDF() {
   const canvas = getCanvas();
   prepareForExport(canvas);

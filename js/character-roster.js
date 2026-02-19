@@ -7,6 +7,8 @@ const STORAGE_KEY = 'shotdesigner_characters';
 const PRESET_COLORS = [
   '#e74c3c', '#3498db', '#2ecc71', '#f1c40f',
   '#e67e22', '#9b59b6', '#1abc9c', '#e91e63',
+  '#ffffff', '#808080', '#1a3a5c', '#1e5631',
+  '#8b4513', '#d4b896',
 ];
 
 let characters = [];
@@ -95,7 +97,7 @@ function setupForm() {
   // Render color swatches
   const swatchContainer = document.getElementById('roster-colors');
   swatchContainer.innerHTML = PRESET_COLORS.map((c, i) =>
-    `<div class="popover-swatch ${i === 0 ? 'selected' : ''}" style="background:${c}" data-color="${c}"></div>`
+    `<div class="popover-swatch ${i === 0 ? 'selected' : ''}" style="background:${c}${c === '#ffffff' ? ';border:1px solid #666' : ''}" data-color="${c}"></div>`
   ).join('');
 
   // Color swatch selection

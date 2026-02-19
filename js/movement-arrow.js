@@ -11,6 +11,8 @@ const CONTROL_POINT_HIT_PADDING = 12;
 const PRESET_COLORS = [
   '#e74c3c', '#3498db', '#2ecc71', '#f1c40f',
   '#e67e22', '#9b59b6', '#1abc9c', '#e91e63',
+  '#ffffff', '#808080', '#1a3a5c', '#1e5631',
+  '#8b4513', '#d4b896',
 ];
 
 /**

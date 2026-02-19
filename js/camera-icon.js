@@ -11,7 +11,16 @@ const DEFAULT_CONE_LENGTH = 30;
 const PRESET_COLORS = [
   '#e74c3c', '#3498db', '#2ecc71', '#f1c40f',
   '#e67e22', '#9b59b6', '#1abc9c', '#e91e63',
+  '#ffffff', '#808080', '#1a3a5c', '#1e5631',
+  '#8b4513', '#d4b896',
 ];
+
+function isLightColor(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.8;
+}
 
 export function createCameraIcon(x, y, options = {}) {
   const color = options.color || '#3498db';
@@ -25,7 +34,7 @@ export function createCameraIcon(x, y, options = {}) {
     fontSize: 10,
     fontWeight: 'bold',
     fontFamily: '-apple-system, sans-serif',
-    fill: '#fff',
+    fill: isLightColor(color) ? '#333' : '#fff',
     originX: 'center',
     originY: 'center',
     top: coneLength * 0.2,
@@ -63,13 +72,14 @@ function buildTriangle(fov, length, color) {
   const halfWidth = Math.tan(halfAngle) * length;
 
   // Apex at bottom (camera position / back), wide base at top (filming direction / front)
+  const strokeColor = isLightColor(color) ? '#333333' : color;
   const triangle = new fabric.Polygon([
     { x: 0, y: length / 2 },
     { x: -halfWidth, y: -length / 2 },
     { x: halfWidth, y: -length / 2 },
   ], {
     fill: hexToRgba(color, 0.25),
-    stroke: color,
+    stroke: strokeColor,
     strokeWidth: 1.5,
     originX: 'center',
     originY: 'center',
@@ -89,9 +99,10 @@ export function updateCameraColor(camera, newColor) {
   if (!camera || camera.objectType !== 'camera') return;
   const objects = camera.getObjects();
   // [0]=triangle, [1]=label
+  const strokeColor = isLightColor(newColor) ? '#333333' : newColor;
   objects[0].set({
     fill: hexToRgba(newColor, 0.25),
-    stroke: newColor,
+    stroke: strokeColor,
   });
   camera.cameraColor = newColor;
   camera.dirty = true;
