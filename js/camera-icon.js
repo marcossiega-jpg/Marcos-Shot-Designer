@@ -1,5 +1,6 @@
 /**
- * Camera Icon — Custom Fabric.js group: camera body + lens + direction cone
+ * Camera Icon — Classic movie camera: body + viewfinder + two film reels
+ * Group layout: [0]=cone, [1]=body, [2]=viewfinder, [3]=largeReel, [4]=smallReel, [5]=label
  */
 
 import { getCanvas } from './canvas-manager.js';
@@ -19,32 +20,55 @@ export function createCameraIcon(x, y, options = {}) {
 
   const cone = buildCone(fov, coneLength, color);
 
-  // Camera body (rectangle)
+  // Camera body (main rectangle)
   const body = new fabric.Rect({
-    width: 24,
-    height: 18,
+    width: 28,
+    height: 20,
     fill: color,
-    rx: 3,
-    ry: 3,
+    rx: 2,
+    ry: 2,
     originX: 'center',
     originY: 'center',
-    left: 0,
-    top: 0,
+    left: -3,
+    top: 4,
   });
 
-  // Lens circle
-  const lens = new fabric.Circle({
-    radius: 5,
-    fill: '#222',
-    stroke: '#fff',
-    strokeWidth: 1.5,
+  // Viewfinder / lens triangle (pointing right)
+  const viewfinder = new fabric.Polygon([
+    { x: 0, y: -8 },
+    { x: 12, y: 0 },
+    { x: 0, y: 8 },
+  ], {
+    fill: color,
     originX: 'center',
     originY: 'center',
-    left: 0,
-    top: 0,
+    left: 16,
+    top: 4,
   });
 
-  // Optional label (up to 4 chars, e.g. CAM1)
+  // Large film reel (back, top-left)
+  const largeReel = new fabric.Circle({
+    radius: 8,
+    fill: color,
+    stroke: null,
+    originX: 'center',
+    originY: 'center',
+    left: -8,
+    top: -10,
+  });
+
+  // Small film reel (front, top-right)
+  const smallReel = new fabric.Circle({
+    radius: 6,
+    fill: color,
+    stroke: null,
+    originX: 'center',
+    originY: 'center',
+    left: 5,
+    top: -8,
+  });
+
+  // Label text (up to 4 chars, e.g. CAM1)
   const labelText = new fabric.FabricText(label, {
     fontSize: 10,
     fontWeight: 'bold',
@@ -52,22 +76,20 @@ export function createCameraIcon(x, y, options = {}) {
     fill: '#fff',
     originX: 'center',
     originY: 'top',
-    top: 13,
+    top: 18,
     left: 0,
     visible: label.length > 0,
   });
 
-  const group = new fabric.Group([cone, body, lens, labelText], {
+  const group = new fabric.Group([cone, body, viewfinder, largeReel, smallReel, labelText], {
     left: x,
     top: y,
     originX: 'center',
     originY: 'center',
-    // Only rotation control
     hasControls: true,
     hasBorders: true,
     lockScalingX: true,
     lockScalingY: true,
-    // Custom data
     objectType: 'camera',
     cameraColor: color,
     cameraFov: fov,
@@ -75,7 +97,6 @@ export function createCameraIcon(x, y, options = {}) {
     cameraLabel: label,
   });
 
-  // Only show rotation control
   group.setControlsVisibility({
     tl: false, tr: false, bl: false, br: false,
     ml: false, mr: false, mt: false, mb: false,
@@ -87,14 +108,9 @@ export function createCameraIcon(x, y, options = {}) {
 
 function buildCone(fov, length, color) {
   const halfAngle = (fov / 2) * (Math.PI / 180);
-  const tipX = 0;
-  const tipY = 0;
   const leftX = -Math.sin(halfAngle) * length;
-  const leftY = -length * Math.cos(halfAngle);
   const rightX = Math.sin(halfAngle) * length;
-  const rightY = -length * Math.cos(halfAngle);
 
-  // Convert color to rgba with opacity
   const rgbaColor = hexToRgba(color, 0.2);
   const strokeColor = hexToRgba(color, 0.5);
 
@@ -124,12 +140,15 @@ function hexToRgba(hex, alpha) {
 export function updateCameraColor(camera, newColor) {
   if (!camera || camera.objectType !== 'camera') return;
   const objects = camera.getObjects();
-  // [0]=cone, [1]=body, [2]=lens, [3]=label
+  // [0]=cone, [1]=body, [2]=viewfinder, [3]=largeReel, [4]=smallReel, [5]=label
   objects[0].set({
     fill: hexToRgba(newColor, 0.2),
     stroke: hexToRgba(newColor, 0.5),
   });
-  objects[1].set('fill', newColor);
+  objects[1].set('fill', newColor); // body
+  objects[2].set('fill', newColor); // viewfinder
+  objects[3].set('fill', newColor); // large reel
+  objects[4].set('fill', newColor); // small reel
   camera.cameraColor = newColor;
   camera.dirty = true;
   getCanvas().requestRenderAll();
@@ -139,11 +158,9 @@ export function updateCameraFov(camera, newFov) {
   if (!camera || camera.objectType !== 'camera') return;
   camera.cameraFov = newFov;
 
-  // Rebuild cone
   const objects = camera.getObjects();
   const oldCone = objects[0];
   const newCone = buildCone(newFov, camera.cameraConeLength, camera.cameraColor);
-  // Copy position properties
   newCone.set({ left: oldCone.left });
   camera.remove(oldCone);
   camera.insertAt(0, newCone);
@@ -168,7 +185,8 @@ export function updateCameraConeLength(camera, newLength) {
 export function updateCameraLabel(camera, newLabel) {
   if (!camera || camera.objectType !== 'camera') return;
   const objects = camera.getObjects();
-  objects[3].set({ text: newLabel, visible: newLabel.length > 0 });
+  // [5] = label text
+  objects[5].set({ text: newLabel, visible: newLabel.length > 0 });
   camera.cameraLabel = newLabel;
   camera.dirty = true;
   getCanvas().requestRenderAll();
