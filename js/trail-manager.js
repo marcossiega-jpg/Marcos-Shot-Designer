@@ -21,11 +21,12 @@ const dragStartPositions = new Map();
 export function initTrailManager() {
   const canvas = getCanvas();
 
-  // Capture position when user clicks on an actor/camera (before drag starts)
+  // Capture position when user clicks on an actor (before drag starts)
+  // Cameras use the separate camera-arrow tool instead
   canvas.on('mouse:down', (opt) => {
     if (!opt.target) return;
     const target = opt.target;
-    if (target.objectType !== 'actor' && target.objectType !== 'camera') return;
+    if (target.objectType !== 'actor') return;
 
     // Store current position — we'll check if it moved on mouse:up / object:modified
     dragStartPositions.set(target, {
@@ -39,7 +40,7 @@ export function initTrailManager() {
   canvas.on('object:modified', (opt) => {
     const target = opt.target;
     if (!target) return;
-    if (target.objectType !== 'actor' && target.objectType !== 'camera') return;
+    if (target.objectType !== 'actor') return;
 
     const startPos = dragStartPositions.get(target);
     if (!startPos) return;
