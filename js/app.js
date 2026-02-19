@@ -18,7 +18,7 @@ let currentTool = 'select';
 let arrowStartPoint = null;
 let lastSelectedArrowId = null;
 let actorConfig = { color: '#e74c3c', label: 'A' };
-let cameraConfig = { label: '' };
+let cameraConfig = { color: '#3498db', label: '' };
 let textConfig = { color: '#ffffff' };
 
 // ── Init ──
@@ -153,6 +153,14 @@ function setupCameraPopover() {
   const labelInput = document.getElementById('camera-config-label');
   labelInput.addEventListener('input', () => {
     cameraConfig.label = labelInput.value || '';
+  });
+
+  document.querySelectorAll('#camera-config-colors .popover-swatch').forEach(swatch => {
+    swatch.addEventListener('click', () => {
+      document.querySelectorAll('#camera-config-colors .popover-swatch').forEach(s => s.classList.remove('selected'));
+      swatch.classList.add('selected');
+      cameraConfig.color = swatch.dataset.color;
+    });
   });
 
   document.getElementById('camera-popover').addEventListener('click', (e) => {
@@ -336,6 +344,7 @@ function placeActor(x, y) {
 function placeCamera(x, y) {
   const canvas = getCanvas();
   const camera = createCameraIcon(x, y, {
+    color: cameraConfig.color,
     label: cameraConfig.label,
   });
   canvas.add(camera);
