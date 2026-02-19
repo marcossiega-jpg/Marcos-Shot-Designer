@@ -7,7 +7,7 @@
 import { getCanvas } from './canvas-manager.js';
 
 const DEFAULT_FOV = 45;
-const DEFAULT_CONE_LENGTH = 56;
+const DEFAULT_CONE_LENGTH = 45;
 const PRESET_COLORS = [
   '#e74c3c', '#3498db', '#2ecc71', '#f1c40f',
   '#e67e22', '#9b59b6', '#1abc9c', '#e91e63',
