@@ -49,7 +49,7 @@ export async function exportJPEG() {
 
     // On iOS, share sheet lets user save to camera roll
     if (isIOS() && navigator.share) {
-      const file = new File([blob], 'shot-design.jpg', { type: 'image/jpeg' });
+      const file = new File([blob], 'dosl-export.jpg', { type: 'image/jpeg' });
       try {
         await navigator.share({ files: [file] });
         return;
@@ -59,7 +59,7 @@ export async function exportJPEG() {
     }
 
     // Desktop fallback
-    downloadBlob(blob, 'shot-design.jpg');
+    downloadBlob(blob, 'dosl-export.jpg');
   } catch (err) {
     console.error('JPEG export error:', err);
     alert('JPEG export error: ' + err.message);
@@ -72,7 +72,7 @@ export async function exportPDF() {
 
     // On iOS, use native share sheet (save to Files, AirDrop, Scriptation, etc.)
     if (isIOS() && navigator.share) {
-      const pdfFile = new File([pdfBlob], 'shot-design.pdf', { type: 'application/pdf' });
+      const pdfFile = new File([pdfBlob], 'dosl-export.pdf', { type: 'application/pdf' });
       try {
         await navigator.share({ files: [pdfFile] });
         return;
@@ -82,7 +82,7 @@ export async function exportPDF() {
     }
 
     // Desktop fallback
-    downloadBlob(pdfBlob, 'shot-design.pdf');
+    downloadBlob(pdfBlob, 'dosl-export.pdf');
   } catch (err) {
     console.error('PDF export error:', err);
     alert('PDF export error: ' + err.message);

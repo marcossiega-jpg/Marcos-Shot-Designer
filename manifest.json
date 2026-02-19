@@ -1,7 +1,7 @@
 {
-  "name": "Shot Designer",
-  "short_name": "ShotDesign",
-  "description": "Camera shot planning tool for film shoots",
+  "name": "Director Overhead Shot Layout",
+  "short_name": "DOSL",
+  "description": "Overhead shot layout tool for film directors — by Cos",
   "start_url": ".",
   "display": "standalone",
   "orientation": "any",
