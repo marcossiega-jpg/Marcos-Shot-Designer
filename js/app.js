@@ -11,7 +11,7 @@ import { createMovementArrow, removeArrow, renderArrowProperties } from './movem
 import { placeText, renderTextProperties } from './text-tool.js';
 import { initRoster, clearActiveCharacter } from './character-roster.js';
 import { exportPNG, exportPDF, shareToScriptation } from './export-manager.js';
-import { initHistory, undo, redo, saveState } from './history-manager.js';
+import { initHistory, undo, redo, saveState, clearHistory } from './history-manager.js';
 
 // ── State ──
 let currentTool = 'select';
@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupStatusBar();
   setupCanvasEvents(canvas);
   setupKeyboard();
+  setupSidebarResize();
 
   setStatus('Ready — create characters in the sidebar, then place them');
 });
@@ -179,6 +180,34 @@ function setupTopBar() {
 
   document.getElementById('btn-close-panel').addEventListener('click', () => {
     closePropertiesPanel();
+  });
+
+  // New Project
+  document.getElementById('btn-new-project').addEventListener('click', () => {
+    const canvas = getCanvas();
+    const hasContent = canvas.getObjects().length > 0 || canvas.backgroundImage;
+    if (!hasContent) {
+      // Nothing to lose, just reset
+      startNewProject();
+      return;
+    }
+    // Show confirmation modal
+    document.getElementById('new-project-modal').classList.remove('hidden');
+  });
+
+  document.getElementById('modal-export-first').addEventListener('click', async () => {
+    document.getElementById('new-project-modal').classList.add('hidden');
+    await exportPDF();
+    startNewProject();
+  });
+
+  document.getElementById('modal-new').addEventListener('click', () => {
+    document.getElementById('new-project-modal').classList.add('hidden');
+    startNewProject();
+  });
+
+  document.getElementById('modal-cancel').addEventListener('click', () => {
+    document.getElementById('new-project-modal').classList.add('hidden');
   });
 }
 
@@ -523,6 +552,83 @@ function setupKeyboard() {
       removeContextMenu();
     }
   });
+}
+
+// ── New Project ──
+function startNewProject() {
+  const canvas = getCanvas();
+
+  // Remove all objects
+  canvas.getObjects().slice().forEach(o => canvas.remove(o));
+
+  // Remove background image
+  canvas.backgroundImage = null;
+
+  canvas.discardActiveObject();
+  canvas.requestRenderAll();
+
+  // Reset history
+  clearHistory();
+
+  // Reset page indicators
+  document.getElementById('page-indicator').classList.add('hidden');
+  document.getElementById('btn-prev-page').classList.add('hidden');
+  document.getElementById('btn-next-page').classList.add('hidden');
+
+  // Reset tool
+  setTool('select');
+  closePropertiesPanel();
+
+  setStatus('New project — create characters in the sidebar, then place them');
+}
+
+// ── Sidebar Resize ──
+function setupSidebarResize() {
+  const handle = document.getElementById('sidebar-resize-handle');
+  const sidebar = document.getElementById('right-sidebar');
+
+  // Restore saved width
+  const savedWidth = localStorage.getItem('shotdesigner_sidebar_width');
+  if (savedWidth) {
+    const w = parseInt(savedWidth);
+    if (w >= 160 && w <= 400) {
+      sidebar.style.width = w + 'px';
+    }
+  }
+
+  let startX, startWidth;
+
+  const onPointerDown = (e) => {
+    e.preventDefault();
+    startX = e.clientX ?? e.touches[0].clientX;
+    startWidth = sidebar.getBoundingClientRect().width;
+    handle.classList.add('dragging');
+    document.body.classList.add('sidebar-resizing');
+
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+  };
+
+  const onPointerMove = (e) => {
+    const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : startX);
+    // Sidebar is on the right, so dragging left = wider
+    const delta = startX - clientX;
+    const newWidth = Math.min(400, Math.max(160, startWidth + delta));
+    sidebar.style.width = newWidth + 'px';
+  };
+
+  const onPointerUp = () => {
+    handle.classList.remove('dragging');
+    document.body.classList.remove('sidebar-resizing');
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+
+    // Save preference
+    const currentWidth = sidebar.getBoundingClientRect().width;
+    localStorage.setItem('shotdesigner_sidebar_width', Math.round(currentWidth));
+  };
+
+  handle.addEventListener('pointerdown', onPointerDown);
 }
 
 // ── Status ──

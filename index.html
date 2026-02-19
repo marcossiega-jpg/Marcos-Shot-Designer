@@ -26,6 +26,10 @@
       </button>
     </div>
     <div class="top-right">
+      <button id="btn-new-project" class="icon-btn" title="New Project">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+        <span>New</span>
+      </button>
       <div class="dropdown" id="export-dropdown">
         <button id="btn-export" class="icon-btn" title="Export">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -96,6 +100,7 @@
 
     <!-- Right Sidebar (always visible) -->
     <aside id="right-sidebar">
+      <div id="sidebar-resize-handle"></div>
       <!-- Properties Section (shown when editing an object) -->
       <div id="properties-section" class="hidden">
         <div class="panel-header">
@@ -177,6 +182,18 @@
       <span id="status-message"></span>
     </div>
   </footer>
+
+  <!-- New Project Confirmation Modal -->
+  <div id="new-project-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <p class="modal-message">Would you like to export your current project before starting a new one?</p>
+      <div class="modal-actions">
+        <button id="modal-export-first" class="modal-btn modal-btn-primary">Export First</button>
+        <button id="modal-new" class="modal-btn modal-btn-danger">New Project</button>
+        <button id="modal-cancel" class="modal-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Hidden file input for loading plans -->
   <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg" hidden>

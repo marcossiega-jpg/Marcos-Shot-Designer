@@ -99,6 +99,12 @@ export function canRedo() {
   return redoStack.length > 0;
 }
 
+export function clearHistory() {
+  undoStack = [];
+  redoStack = [];
+  saveState();
+}
+
 function notifyStateChange() {
   if (onStateChange) {
     onStateChange(canUndo(), canRedo());
