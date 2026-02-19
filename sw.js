@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shot-designer-v16';
+const CACHE_NAME = 'shot-designer-v20';
 const ASSETS = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const ASSETS = [
   './js/history-manager.js',
   './js/text-tool.js',
   './js/character-roster.js',
+  './js/lib/jspdf.umd.min.js',
   './manifest.json',
 ];
 
@@ -22,7 +23,6 @@ const CDN_ASSETS = [
   'https://cdn.jsdelivr.net/npm/fabric@6.0.2/dist/index.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js',
 ];
 
 self.addEventListener('install', (event) => {

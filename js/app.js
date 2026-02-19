@@ -10,7 +10,7 @@ import { createCameraIcon, renderCameraProperties } from './camera-icon.js';
 import { createMovementArrow, removeArrow, renderArrowProperties } from './movement-arrow.js';
 import { placeText, renderTextProperties } from './text-tool.js';
 import { initRoster, clearActiveCharacter } from './character-roster.js';
-import { exportPNG, exportPDF, shareToScriptation } from './export-manager.js';
+import { exportJPEG, exportPDF } from './export-manager.js';
 import { initHistory, undo, redo, saveState, clearHistory } from './history-manager.js';
 
 // ── State ──
@@ -163,19 +163,14 @@ function setupTopBar() {
     dropdown.classList.remove('open');
   });
 
-  document.getElementById('export-scriptation').addEventListener('click', () => {
-    dropdown.classList.remove('open');
-    shareToScriptation();
-  });
-
-  document.getElementById('export-png').addEventListener('click', () => {
-    dropdown.classList.remove('open');
-    exportPNG();
-  });
-
   document.getElementById('export-pdf').addEventListener('click', () => {
     dropdown.classList.remove('open');
     exportPDF();
+  });
+
+  document.getElementById('export-jpeg').addEventListener('click', () => {
+    dropdown.classList.remove('open');
+    exportJPEG();
   });
 
   document.getElementById('btn-close-panel').addEventListener('click', () => {

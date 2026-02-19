@@ -1,6 +1,6 @@
 /**
- * Export Manager — PNG, PDF export and Scriptation sharing
- * Uses Web Share API on iOS, blob URLs as fallback
+ * Export Manager — JPEG and PDF export
+ * Uses native iOS share sheet for camera roll / app sharing
  */
 
 import { getCanvas } from './canvas-manager.js';
@@ -9,17 +9,19 @@ const isIOS = () =>
   /iPad|iPhone|iPod/.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-export async function exportPNG() {
+export async function exportJPEG() {
   try {
     const canvas = getCanvas();
     prepareForExport(canvas);
 
     const bounds = getContentBounds(canvas);
 
-    const dataUrl = canvas.toDataURL({
+    // Draw content onto an offscreen canvas with white background, centered
+    const multiplier = 2;
+    const srcDataUrl = canvas.toDataURL({
       format: 'png',
       quality: 1,
-      multiplier: 2,
+      multiplier,
       left: bounds.left,
       top: bounds.top,
       width: bounds.width,
@@ -28,11 +30,26 @@ export async function exportPNG() {
 
     restoreAfterExport(canvas);
 
-    const blob = dataUrlToBlob(dataUrl);
+    // Create a JPEG with white background
+    const img = await loadImage(srcDataUrl);
+    const offscreen = document.createElement('canvas');
+    offscreen.width = img.width;
+    offscreen.height = img.height;
+    const ctx = offscreen.getContext('2d');
 
-    // On iOS, use share sheet so user can Save/AirDrop/open in app
+    // White background (JPEG has no transparency)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, offscreen.width, offscreen.height);
+
+    // Draw content centered
+    ctx.drawImage(img, 0, 0);
+
+    const jpegDataUrl = offscreen.toDataURL('image/jpeg', 0.92);
+    const blob = dataUrlToBlob(jpegDataUrl);
+
+    // On iOS, share sheet lets user save to camera roll
     if (isIOS() && navigator.share) {
-      const file = new File([blob], 'shot-design.png', { type: 'image/png' });
+      const file = new File([blob], 'shot-design.jpg', { type: 'image/jpeg' });
       try {
         await navigator.share({ files: [file] });
         return;
@@ -42,34 +59,10 @@ export async function exportPNG() {
     }
 
     // Desktop fallback
-    downloadBlob(blob, 'shot-design.png');
+    downloadBlob(blob, 'shot-design.jpg');
   } catch (err) {
-    console.error('PNG export error:', err);
-    alert('PNG export error: ' + err.message);
-  }
-}
-
-export async function shareToScriptation() {
-  try {
-    const pdfBlob = generatePdfBlob();
-    const pdfFile = new File([pdfBlob], 'shot-design.pdf', { type: 'application/pdf' });
-
-    // Use share sheet (user picks Scriptation or any other app)
-    if (navigator.share) {
-      try {
-        await navigator.share({ files: [pdfFile] });
-        return;
-      } catch (err) {
-        if (err.name === 'AbortError') return;
-        // Fall through to blob URL
-      }
-    }
-
-    // Fallback: open in browser
-    openBlob(pdfBlob);
-  } catch (err) {
-    console.error('Scriptation share error:', err);
-    alert('Share error: ' + err.message);
+    console.error('JPEG export error:', err);
+    alert('JPEG export error: ' + err.message);
   }
 }
 
@@ -77,7 +70,7 @@ export async function exportPDF() {
   try {
     const pdfBlob = generatePdfBlob();
 
-    // On iOS, use share sheet
+    // On iOS, use native share sheet (save to Files, AirDrop, Scriptation, etc.)
     if (isIOS() && navigator.share) {
       const pdfFile = new File([pdfBlob], 'shot-design.pdf', { type: 'application/pdf' });
       try {
@@ -118,15 +111,35 @@ function generatePdfBlob() {
     throw new Error('PDF library not loaded. Please reload the app.');
   }
 
-  const isLandscape = bounds.width > bounds.height;
+  // US Letter page (8.5 x 11 inches = 612 x 792 points)
+  const contentAspect = bounds.width / bounds.height;
+  const isLandscape = contentAspect > 1;
+
+  const PAGE_W = isLandscape ? 792 : 612;
+  const PAGE_H = isLandscape ? 612 : 792;
+
+  // Fit content to fill entire page without cropping
+  let fitW, fitH;
+  if (contentAspect > PAGE_W / PAGE_H) {
+    fitW = PAGE_W;
+    fitH = PAGE_W / contentAspect;
+  } else {
+    fitH = PAGE_H;
+    fitW = PAGE_H * contentAspect;
+  }
+
+  // Center on page
+  const x = (PAGE_W - fitW) / 2;
+  const y = (PAGE_H - fitH) / 2;
+
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({
     orientation: isLandscape ? 'landscape' : 'portrait',
-    unit: 'px',
-    format: [bounds.width, bounds.height],
+    unit: 'pt',
+    format: 'letter',
   });
 
-  pdf.addImage(dataUrl, 'PNG', 0, 0, bounds.width, bounds.height);
+  pdf.addImage(dataUrl, 'PNG', x, y, fitW, fitH);
   return pdf.output('blob');
 }
 
@@ -167,6 +180,15 @@ function getContentBounds(canvas) {
   };
 }
 
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -175,12 +197,6 @@ function downloadBlob(blob, filename) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-}
-
-function openBlob(blob) {
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
