@@ -1,32 +1,52 @@
 /**
  * Export Manager — PNG, PDF export and Scriptation sharing
- * Uses blob URLs and Web Share API for iPad PWA compatibility
+ * Uses Web Share API on iOS, blob URLs as fallback
  */
 
 import { getCanvas } from './canvas-manager.js';
 
-export function exportPNG() {
-  const canvas = getCanvas();
-  prepareForExport(canvas);
+const isIOS = () =>
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  const bounds = getContentBounds(canvas);
-  const multiplier = 2;
+export async function exportPNG() {
+  try {
+    const canvas = getCanvas();
+    prepareForExport(canvas);
 
-  const dataUrl = canvas.toDataURL({
-    format: 'png',
-    quality: 1,
-    multiplier,
-    left: bounds.left,
-    top: bounds.top,
-    width: bounds.width,
-    height: bounds.height,
-  });
+    const bounds = getContentBounds(canvas);
 
-  restoreAfterExport(canvas);
+    const dataUrl = canvas.toDataURL({
+      format: 'png',
+      quality: 1,
+      multiplier: 2,
+      left: bounds.left,
+      top: bounds.top,
+      width: bounds.width,
+      height: bounds.height,
+    });
 
-  // Convert data URL to blob for reliable cross-platform download
-  const blob = dataUrlToBlob(dataUrl);
-  openOrDownloadBlob(blob, 'shot-design.png');
+    restoreAfterExport(canvas);
+
+    const blob = dataUrlToBlob(dataUrl);
+
+    // On iOS, use share sheet so user can Save/AirDrop/open in app
+    if (isIOS() && navigator.share) {
+      const file = new File([blob], 'shot-design.png', { type: 'image/png' });
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    // Desktop fallback
+    downloadBlob(blob, 'shot-design.png');
+  } catch (err) {
+    console.error('PNG export error:', err);
+    alert('PNG export error: ' + err.message);
+  }
 }
 
 export async function shareToScriptation() {
@@ -34,32 +54,45 @@ export async function shareToScriptation() {
     const pdfBlob = generatePdfBlob();
     const pdfFile = new File([pdfBlob], 'shot-design.pdf', { type: 'application/pdf' });
 
-    // Try Web Share API first (opens iOS share sheet → pick Scriptation)
+    // Use share sheet (user picks Scriptation or any other app)
     if (navigator.share) {
       try {
-        await navigator.share({ files: [pdfFile], title: 'Shot Design' });
+        await navigator.share({ files: [pdfFile] });
         return;
       } catch (err) {
         if (err.name === 'AbortError') return;
-        // Share failed or not supported for files, fall through
+        // Fall through to blob URL
       }
     }
 
-    // Fallback: open PDF in new tab (user can share from there)
-    openOrDownloadBlob(pdfBlob, 'shot-design.pdf');
+    // Fallback: open in browser
+    openBlob(pdfBlob);
   } catch (err) {
-    console.error('Share to Scriptation failed:', err);
-    alert('Export failed. Please try again.');
+    console.error('Scriptation share error:', err);
+    alert('Share error: ' + err.message);
   }
 }
 
-export function exportPDF() {
+export async function exportPDF() {
   try {
     const pdfBlob = generatePdfBlob();
-    openOrDownloadBlob(pdfBlob, 'shot-design.pdf');
+
+    // On iOS, use share sheet
+    if (isIOS() && navigator.share) {
+      const pdfFile = new File([pdfBlob], 'shot-design.pdf', { type: 'application/pdf' });
+      try {
+        await navigator.share({ files: [pdfFile] });
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    // Desktop fallback
+    downloadBlob(pdfBlob, 'shot-design.pdf');
   } catch (err) {
-    console.error('PDF export failed:', err);
-    alert('PDF export failed. Please try again.');
+    console.error('PDF export error:', err);
+    alert('PDF export error: ' + err.message);
   }
 }
 
@@ -68,12 +101,11 @@ function generatePdfBlob() {
   prepareForExport(canvas);
 
   const bounds = getContentBounds(canvas);
-  const multiplier = 2;
 
   const dataUrl = canvas.toDataURL({
     format: 'png',
     quality: 1,
-    multiplier,
+    multiplier: 2,
     left: bounds.left,
     top: bounds.top,
     width: bounds.width,
@@ -82,12 +114,14 @@ function generatePdfBlob() {
 
   restoreAfterExport(canvas);
 
-  const isLandscape = bounds.width > bounds.height;
-  const orientation = isLandscape ? 'landscape' : 'portrait';
+  if (!window.jspdf) {
+    throw new Error('PDF library not loaded. Please reload the app.');
+  }
 
+  const isLandscape = bounds.width > bounds.height;
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({
-    orientation,
+    orientation: isLandscape ? 'landscape' : 'portrait',
     unit: 'px',
     format: [bounds.width, bounds.height],
   });
@@ -98,13 +132,11 @@ function generatePdfBlob() {
 
 function prepareForExport(canvas) {
   canvas.discardActiveObject();
-
   canvas.getObjects().forEach(o => {
     if (o.arrowId && (o.objectType === 'controlPoint' || o.objectType === 'startPoint' || o.objectType === 'endPoint')) {
       o.set({ visible: false });
     }
   });
-
   canvas.requestRenderAll();
 }
 
@@ -127,7 +159,6 @@ function getContentBounds(canvas) {
       height: bg.height * (bg.scaleY || 1),
     };
   }
-
   return {
     left: 0,
     top: 0,
@@ -136,25 +167,20 @@ function getContentBounds(canvas) {
   };
 }
 
-function openOrDownloadBlob(blob, filename) {
+function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
 
-  // On iOS/iPad, window.open works reliably for blobs in PWA mode
-  // On desktop, try download link first
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-  if (isIOS) {
-    window.open(url, '_blank');
-  } else {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
+function openBlob(blob) {
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
