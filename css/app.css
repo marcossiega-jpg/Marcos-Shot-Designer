@@ -205,20 +205,200 @@ html, body {
   touch-action: none;
 }
 
-/* === Right Properties Panel === */
-#properties-panel {
+/* === Right Sidebar (always visible) === */
+#right-sidebar {
   width: var(--panel-w);
   min-width: var(--panel-w);
   padding-right: var(--safe-right);
   background: var(--bg-darker);
   border-left: 1px solid var(--border-color);
-  overflow-y: auto;
-  transition: margin-right 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   z-index: 50;
 }
 
-#properties-panel.hidden {
+/* Properties section — collapsible top zone */
+#properties-section {
+  border-bottom: 1px solid var(--border-color);
+  overflow-y: auto;
+  max-height: 50%;
+  flex-shrink: 0;
+}
+
+#properties-section.hidden {
   display: none;
+}
+
+/* Roster section — always visible */
+#roster-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+#roster-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px;
+}
+
+/* Roster items */
+.roster-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+
+.roster-item:hover {
+  background: var(--bg-hover);
+}
+
+.roster-item.active {
+  background: var(--bg-active);
+}
+
+.roster-item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #333;
+  flex-shrink: 0;
+  background: linear-gradient(to right, var(--char-color) 50%, #fff 50%);
+  border: 2px solid var(--char-color);
+}
+
+.roster-item-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roster-item-delete {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.roster-item:hover .roster-item-delete {
+  opacity: 1;
+}
+
+.roster-item-delete:hover {
+  color: var(--danger);
+  background: rgba(220, 53, 69, 0.15);
+}
+
+@media (pointer: coarse) {
+  .roster-item-delete {
+    opacity: 0.5;
+  }
+}
+
+/* Roster camera icon (no split-circle) */
+.roster-item-icon-camera {
+  background: var(--bg-panel) !important;
+  border-color: var(--char-color) !important;
+  padding: 4px;
+}
+
+/* Roster type toggle */
+.roster-type-toggle {
+  display: flex;
+  gap: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.roster-type-btn {
+  flex: 1;
+  padding: 6px 0;
+  background: var(--bg-dark);
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s;
+}
+
+.roster-type-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Roster form */
+#roster-form {
+  padding: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.roster-form-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.roster-btn {
+  flex: 1;
+  padding: 6px 0;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.roster-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.roster-btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+/* Roster empty state */
+#roster-empty {
+  padding: 20px 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+#roster-empty p {
+  margin-bottom: 4px;
 }
 
 .panel-header {

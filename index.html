@@ -46,59 +46,15 @@
       <button class="tool-btn active" data-tool="select" title="Select">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M4 2l12 16-4.4-1.6L8 22l-1.2-3.6L2 18z"/></svg>
       </button>
-      <div style="position:relative">
-        <button class="tool-btn" data-tool="actor" title="Actor">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 8 0v2"/></svg>
-        </button>
-        <!-- Actor config popover -->
-        <div id="actor-popover" class="tool-popover hidden">
-          <div class="popover-section">
-            <label class="popover-label">Label</label>
-            <input type="text" id="actor-config-label" class="popover-input" value="A" maxlength="4" placeholder="ACT1">
-          </div>
-          <div class="popover-section">
-            <label class="popover-label">Color</label>
-            <div class="popover-swatches" id="actor-config-colors">
-              <div class="popover-swatch selected" style="background:#e74c3c" data-color="#e74c3c"></div>
-              <div class="popover-swatch" style="background:#3498db" data-color="#3498db"></div>
-              <div class="popover-swatch" style="background:#2ecc71" data-color="#2ecc71"></div>
-              <div class="popover-swatch" style="background:#f1c40f" data-color="#f1c40f"></div>
-              <div class="popover-swatch" style="background:#e67e22" data-color="#e67e22"></div>
-              <div class="popover-swatch" style="background:#9b59b6" data-color="#9b59b6"></div>
-              <div class="popover-swatch" style="background:#1abc9c" data-color="#1abc9c"></div>
-              <div class="popover-swatch" style="background:#e91e63" data-color="#e91e63"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <button class="tool-btn" data-tool="actor" title="Actor">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 8 0v2"/></svg>
+      </button>
       <button class="tool-btn" data-tool="actor-arrow" title="Actor Movement">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 19Q12 5 19 12" stroke-dasharray="3 2"/><polygon points="19 12 14 10 16 15" fill="currentColor"/><circle cx="6" cy="18" r="4"/></svg>
       </button>
-      <div style="position:relative">
-        <button class="tool-btn" data-tool="camera" title="Camera">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="15" height="12" rx="2"/><polygon points="22 8 17 12 22 16"/></svg>
-        </button>
-        <!-- Camera config popover -->
-        <div id="camera-popover" class="tool-popover hidden">
-          <div class="popover-section">
-            <label class="popover-label">Label</label>
-            <input type="text" id="camera-config-label" class="popover-input" value="" maxlength="4" placeholder="CAM1">
-          </div>
-          <div class="popover-section">
-            <label class="popover-label">Color</label>
-            <div class="popover-swatches" id="camera-config-colors">
-              <div class="popover-swatch selected" style="background:#3498db" data-color="#3498db"></div>
-              <div class="popover-swatch" style="background:#e74c3c" data-color="#e74c3c"></div>
-              <div class="popover-swatch" style="background:#2ecc71" data-color="#2ecc71"></div>
-              <div class="popover-swatch" style="background:#f1c40f" data-color="#f1c40f"></div>
-              <div class="popover-swatch" style="background:#e67e22" data-color="#e67e22"></div>
-              <div class="popover-swatch" style="background:#9b59b6" data-color="#9b59b6"></div>
-              <div class="popover-swatch" style="background:#1abc9c" data-color="#1abc9c"></div>
-              <div class="popover-swatch" style="background:#e91e63" data-color="#e91e63"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <button class="tool-btn" data-tool="camera" title="Camera">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="15" height="12" rx="2"/><polygon points="22 8 17 12 22 16"/></svg>
+      </button>
       <button class="tool-btn" data-tool="camera-arrow" title="Camera Movement">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 19Q12 5 19 12"/><polygon points="19 12 14 10 16 15" fill="currentColor"/><rect x="4" y="15" width="7" height="5" rx="1"/></svg>
       </button>
@@ -137,16 +93,70 @@
       <canvas id="main-canvas"></canvas>
     </div>
 
-    <!-- Right Properties Panel -->
-    <aside id="properties-panel" class="hidden">
-      <div class="panel-header">
-        <span>Properties</span>
-        <button id="btn-close-panel" class="icon-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+    <!-- Right Sidebar (always visible) -->
+    <aside id="right-sidebar">
+      <!-- Properties Section (shown when editing an object) -->
+      <div id="properties-section" class="hidden">
+        <div class="panel-header">
+          <span>Properties</span>
+          <button id="btn-close-panel" class="icon-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div id="panel-content">
+          <!-- Dynamic content inserted by JS -->
+        </div>
       </div>
-      <div id="panel-content">
-        <!-- Dynamic content inserted by JS -->
+
+      <!-- Character Roster Section (always visible) -->
+      <div id="roster-section">
+        <div class="panel-header">
+          <span>Characters</span>
+          <button id="btn-add-character" class="icon-btn" title="Add Character">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+
+        <!-- Inline add form (hidden by default) -->
+        <div id="roster-form" class="hidden">
+          <div class="roster-form-inner">
+            <div class="prop-group">
+              <div class="roster-type-toggle" id="roster-type-toggle">
+                <button class="roster-type-btn active" data-type="actor">Actor</button>
+                <button class="roster-type-btn" data-type="camera">Camera</button>
+              </div>
+            </div>
+            <div class="prop-group">
+              <label class="prop-label">Name</label>
+              <input type="text" class="prop-input" id="roster-name" placeholder="e.g. Detective Morgan" maxlength="30">
+            </div>
+            <div class="prop-group">
+              <label class="prop-label">Label (on icon)</label>
+              <input type="text" class="prop-input" id="roster-label" placeholder="e.g. DM" maxlength="4">
+            </div>
+            <div class="prop-group">
+              <label class="prop-label">Color</label>
+              <div class="popover-swatches" id="roster-colors">
+                <!-- Rendered by JS -->
+              </div>
+            </div>
+            <div class="roster-form-actions">
+              <button id="roster-save" class="roster-btn roster-btn-primary">Save</button>
+              <button id="roster-cancel" class="roster-btn">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Character list -->
+        <div id="roster-list">
+          <!-- Dynamically rendered -->
+        </div>
+
+        <!-- Empty state -->
+        <div id="roster-empty">
+          <p>No characters yet.</p>
+          <p>Tap + to create one.</p>
+        </div>
       </div>
     </aside>
   </div>

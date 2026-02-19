@@ -7,15 +7,15 @@ import { initTouchHandler } from './touch-handler.js';
 import { initPdfLoader, goToPage, getCurrentPage, getTotalPages, isPdf } from './pdf-loader.js';
 import { createActorIcon, renderActorProperties } from './actor-icon.js';
 import { createCameraIcon, renderCameraProperties } from './camera-icon.js';
-import { createMovementArrow, showArrowHandles, removeArrow, renderArrowProperties } from './movement-arrow.js';
+import { createMovementArrow, removeArrow, renderArrowProperties } from './movement-arrow.js';
 import { placeText, renderTextProperties } from './text-tool.js';
+import { initRoster, clearActiveCharacter } from './character-roster.js';
 import { exportPNG, exportPDF } from './export-manager.js';
 import { initHistory, undo, redo, saveState } from './history-manager.js';
 
 // ── State ──
 let currentTool = 'select';
 let arrowStartPoint = null;
-let lastSelectedArrowId = null;
 let actorConfig = { color: '#e74c3c', label: 'A' };
 let cameraConfig = { color: '#3498db', label: '' };
 let textConfig = { color: '#ffffff' };
@@ -33,32 +33,28 @@ document.addEventListener('DOMContentLoaded', () => {
   initHistory(handleHistoryState);
 
   setupToolbar();
-  setupActorPopover();
-  setupCameraPopover();
   setupTextPopover();
+  initRoster(handleCharacterSelect);
   setupTopBar();
   setupStatusBar();
   setupCanvasEvents(canvas);
   setupKeyboard();
 
-  setStatus('Ready — load a floor plan to begin');
+  setStatus('Ready — create characters in the sidebar, then place them');
 });
 
 // ── Toolbar ──
 function setupToolbar() {
-  // Tool buttons
   document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
     btn.addEventListener('click', () => {
       setTool(btn.dataset.tool);
     });
   });
 
-  // Load plan button
   document.getElementById('btn-load-plan').addEventListener('click', () => {
     document.getElementById('file-input').click();
   });
 
-  // Delete button
   document.getElementById('btn-delete').addEventListener('click', deleteSelected);
 }
 
@@ -66,18 +62,14 @@ function setTool(tool) {
   currentTool = tool;
   arrowStartPoint = null;
   removeArrowStartIndicator();
+  if (tool !== 'actor' && tool !== 'camera') clearActiveCharacter();
 
   document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tool === tool);
   });
 
-  // Show/hide popovers
-  const actorPopover = document.getElementById('actor-popover');
-  const cameraPopover = document.getElementById('camera-popover');
+  // Show/hide text popover
   const textPopover = document.getElementById('text-popover');
-
-  actorPopover.classList.toggle('hidden', tool !== 'actor');
-  cameraPopover.classList.toggle('hidden', tool !== 'camera');
   textPopover.classList.toggle('hidden', tool !== 'text');
 
   const canvas = getCanvas();
@@ -99,9 +91,7 @@ function setTool(tool) {
 function setInteractive(enabled) {
   const canvas = getCanvas();
   canvas.forEachObject(o => {
-    // Always keep arrow handles interactive
     if (o.objectType === 'controlPoint' || o.objectType === 'startPoint' || o.objectType === 'endPoint') return;
-
     o.selectable = enabled;
     o.evented = enabled;
   });
@@ -110,56 +100,13 @@ function setInteractive(enabled) {
 function getToolStatus(tool) {
   switch (tool) {
     case 'select': return 'Select mode — tap objects to select';
-    case 'actor': return 'Actor mode — pick color/label, then double-tap to place';
-    case 'actor-arrow': return 'Actor movement — tap start, then tap end (dotted arrow)';
-    case 'camera': return 'Camera mode — double-tap to place camera';
-    case 'camera-arrow': return 'Camera movement — tap start, then tap end (black arrow)';
-    case 'text': return 'Text mode — double-tap to place text, use Apple Pencil to write';
+    case 'actor': return 'Actor mode — double-tap to place';
+    case 'actor-arrow': return 'Actor movement — tap start, then tap end';
+    case 'camera': return 'Camera mode — double-tap to place';
+    case 'camera-arrow': return 'Camera movement — tap start, then tap end';
+    case 'text': return 'Text mode — double-tap to place text';
     default: return '';
   }
-}
-
-// ── Actor Popover ──
-function setupActorPopover() {
-  // Label input
-  const labelInput = document.getElementById('actor-config-label');
-  labelInput.addEventListener('input', () => {
-    actorConfig.label = labelInput.value || 'A';
-  });
-
-  // Prevent popover clicks from propagating to toolbar
-  document.getElementById('actor-popover').addEventListener('click', (e) => {
-    e.stopPropagation();
-  });
-
-  // Color swatches
-  document.querySelectorAll('#actor-config-colors .popover-swatch').forEach(swatch => {
-    swatch.addEventListener('click', () => {
-      document.querySelectorAll('#actor-config-colors .popover-swatch').forEach(s => s.classList.remove('selected'));
-      swatch.classList.add('selected');
-      actorConfig.color = swatch.dataset.color;
-    });
-  });
-}
-
-// ── Camera Popover ──
-function setupCameraPopover() {
-  const labelInput = document.getElementById('camera-config-label');
-  labelInput.addEventListener('input', () => {
-    cameraConfig.label = labelInput.value || '';
-  });
-
-  document.querySelectorAll('#camera-config-colors .popover-swatch').forEach(swatch => {
-    swatch.addEventListener('click', () => {
-      document.querySelectorAll('#camera-config-colors .popover-swatch').forEach(s => s.classList.remove('selected'));
-      swatch.classList.add('selected');
-      cameraConfig.color = swatch.dataset.color;
-    });
-  });
-
-  document.getElementById('camera-popover').addEventListener('click', (e) => {
-    e.stopPropagation();
-  });
 }
 
 // ── Text Popover ──
@@ -178,13 +125,25 @@ function setupTextPopover() {
   });
 }
 
+// ── Character Roster Callback ──
+function handleCharacterSelect(character) {
+  if (character.type === 'camera') {
+    cameraConfig.color = character.color;
+    cameraConfig.label = character.label;
+    setTool('camera');
+  } else {
+    actorConfig.color = character.color;
+    actorConfig.label = character.label;
+    setTool('actor');
+  }
+  setStatus(`Selected "${character.name}" — double-tap to place`);
+}
+
 // ── Top Bar ──
 function setupTopBar() {
-  // Undo/Redo
   document.getElementById('btn-undo').addEventListener('click', undo);
   document.getElementById('btn-redo').addEventListener('click', redo);
 
-  // Export dropdown
   const dropdown = document.getElementById('export-dropdown');
   document.getElementById('btn-export').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -205,7 +164,6 @@ function setupTopBar() {
     exportPDF();
   });
 
-  // Properties panel close
   document.getElementById('btn-close-panel').addEventListener('click', () => {
     closePropertiesPanel();
   });
@@ -250,7 +208,6 @@ function handlePageChange(current, total) {
 
 // ── Canvas Events ──
 function setupCanvasEvents(canvas) {
-  // Double-tap tracking for placement and properties
   let lastPlaceTapTime = 0;
   let lastPlaceTapPos = null;
 
@@ -258,35 +215,33 @@ function setupCanvasEvents(canvas) {
     const now = Date.now();
     const pointer = canvas.getPointer(opt.e);
 
-    // Double-tap on existing object → open properties (in any mode)
+    // Double-tap on existing object → open properties
     if (opt.target && now - lastPlaceTapTime < 400) {
       openProperties(opt.target);
       lastPlaceTapTime = 0;
       return;
     }
 
-    // Actor arrow: single-tap start, single-tap end (two-tap, dotted)
+    // Actor arrow: two-tap (dotted, actor's color)
     if (currentTool === 'actor-arrow' && !opt.target) {
       handleActorArrowTap(pointer.x, pointer.y);
       lastPlaceTapTime = 0;
       return;
     }
 
-    // Camera arrow: single-tap start, single-tap end (two-tap, solid black)
+    // Camera arrow: two-tap (solid, camera's color)
     if (currentTool === 'camera-arrow' && !opt.target) {
       handleCameraArrowTap(pointer.x, pointer.y);
       lastPlaceTapTime = 0;
       return;
     }
 
-    // For placement modes: require double-tap on empty canvas
+    // Placement modes: require double-tap
     if (!opt.target && (currentTool === 'actor' || currentTool === 'camera' || currentTool === 'text')) {
-      // Check if this is a double-tap (second tap within 400ms, near same spot)
       if (now - lastPlaceTapTime < 400 && lastPlaceTapPos) {
         const dx = pointer.x - lastPlaceTapPos.x;
         const dy = pointer.y - lastPlaceTapPos.y;
         if (Math.sqrt(dx * dx + dy * dy) < 30) {
-          // Double-tap confirmed → place the object
           switch (currentTool) {
             case 'actor':
               placeActor(pointer.x, pointer.y);
@@ -305,7 +260,6 @@ function setupCanvasEvents(canvas) {
         }
       }
 
-      // First tap — record it, show status hint
       lastPlaceTapTime = now;
       lastPlaceTapPos = { x: pointer.x, y: pointer.y };
       setStatus('Double-tap to place ' + currentTool);
@@ -316,7 +270,6 @@ function setupCanvasEvents(canvas) {
     lastPlaceTapPos = pointer ? { x: pointer.x, y: pointer.y } : null;
   });
 
-  // Selection change
   canvas.on('selection:created', handleSelection);
   canvas.on('selection:updated', handleSelection);
   canvas.on('selection:cleared', handleSelectionCleared);
@@ -347,7 +300,7 @@ function placeCamera(x, y) {
   setStatus('Camera placed');
 }
 
-// ── Actor Arrow (two-tap: start → end, dotted) ──
+// ── Actor Arrow (two-tap, dotted, actor's color) ──
 function handleActorArrowTap(x, y) {
   if (!arrowStartPoint) {
     arrowStartPoint = { x, y };
@@ -365,7 +318,7 @@ function handleActorArrowTap(x, y) {
   }
 }
 
-// ── Camera Arrow (two-tap: start → end, solid black) ──
+// ── Camera Arrow (two-tap, solid, camera's color) ──
 function handleCameraArrowTap(x, y) {
   if (!arrowStartPoint) {
     arrowStartPoint = { x, y };
@@ -373,7 +326,9 @@ function handleCameraArrowTap(x, y) {
     setStatus('Camera movement: tap end point');
   } else {
     removeArrowStartIndicator();
-    createMovementArrow(arrowStartPoint.x, arrowStartPoint.y, x, y, { color: '#000000' });
+    createMovementArrow(arrowStartPoint.x, arrowStartPoint.y, x, y, {
+      color: cameraConfig.color,
+    });
     arrowStartPoint = null;
     saveState();
     setStatus('Camera arrow created — tap to place another');
@@ -404,36 +359,19 @@ function removeArrowStartIndicator() {
 }
 
 // ── Selection & Properties ──
-function handleSelection(opt) {
-  const obj = opt.selected ? opt.selected[0] : null;
-  if (!obj) return;
-
-  // Hide previous arrow handles
-  if (lastSelectedArrowId) {
-    showArrowHandles(lastSelectedArrowId, false);
-    lastSelectedArrowId = null;
-  }
-
-  if (obj.objectType === 'movementArrow') {
-    showArrowHandles(obj.arrowId, true);
-    lastSelectedArrowId = obj.arrowId;
-  }
+function handleSelection() {
+  // Control points are always visible now, no toggling needed
 }
 
 function handleSelectionCleared() {
   closePropertiesPanel();
-
-  if (lastSelectedArrowId) {
-    showArrowHandles(lastSelectedArrowId, false);
-    lastSelectedArrowId = null;
-  }
 }
 
 function openProperties(obj) {
   if (!obj || !obj.objectType) return;
 
-  const panel = document.getElementById('properties-panel');
-  panel.classList.remove('hidden');
+  const section = document.getElementById('properties-section');
+  section.classList.remove('hidden');
 
   if (obj.objectType === 'actor') {
     renderActorProperties(obj);
@@ -447,7 +385,7 @@ function openProperties(obj) {
 }
 
 function closePropertiesPanel() {
-  document.getElementById('properties-panel').classList.add('hidden');
+  document.getElementById('properties-section').classList.add('hidden');
   document.getElementById('panel-content').innerHTML = '';
 }
 
@@ -457,7 +395,6 @@ function deleteSelected() {
   const active = canvas.getActiveObject();
   if (!active) return;
 
-  // Movement arrows
   if (active.objectType === 'movementArrow') {
     removeArrow(active.arrowId);
   } else {
@@ -480,15 +417,8 @@ function handleHistoryState(canUndoFlag, canRedoFlag) {
 // ── Long Press ──
 function handleLongPress(clientX, clientY) {
   const canvas = getCanvas();
-  const wrapper = document.getElementById('canvas-wrapper');
-  const rect = wrapper.getBoundingClientRect();
-  const pointer = canvas.getPointer({ clientX, clientY });
-
-  // Find object at pointer
   const target = canvas.findTarget({ clientX, clientY }, false);
   if (!target) return;
-
-  // Show context menu
   showContextMenu(clientX, clientY, target);
 }
 
@@ -508,22 +438,17 @@ function showContextMenu(x, y, target) {
     openProperties(target);
   });
 
-  // Rotate option for actors and cameras
   if (target.objectType === 'actor' || target.objectType === 'camera') {
     const rotateBtn = document.createElement('button');
     rotateBtn.textContent = 'Rotate';
     rotateBtn.addEventListener('click', () => {
       removeContextMenu();
       const canvas = getCanvas();
-      // Enable rotation controls on this object
-      target.set({
-        hasControls: true,
-        lockRotation: false,
-      });
+      target.set({ hasControls: true, lockRotation: false });
       target.setControlsVisibility({
         tl: false, tr: false, bl: false, br: false,
         ml: false, mr: false, mt: false, mb: false,
-        mtr: true, // rotation handle
+        mtr: true,
       });
       canvas.setActiveObject(target);
       canvas.requestRenderAll();
@@ -545,7 +470,6 @@ function showContextMenu(x, y, target) {
   menu.appendChild(deleteBtn);
   document.body.appendChild(menu);
 
-  // Close on next tap
   setTimeout(() => {
     document.addEventListener('click', removeContextMenu, { once: true });
   }, 10);
@@ -559,21 +483,15 @@ function removeContextMenu() {
 // ── Keyboard Shortcuts ──
 function setupKeyboard() {
   document.addEventListener('keydown', (e) => {
-    // Ignore when typing in input fields or IText
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-    // Also ignore when editing IText on canvas
     const canvas = getCanvas();
     const activeObj = canvas.getActiveObject();
     if (activeObj && activeObj.isEditing) return;
 
     if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
       e.preventDefault();
-      if (e.shiftKey) {
-        redo();
-      } else {
-        undo();
-      }
+      if (e.shiftKey) { redo(); } else { undo(); }
     }
 
     if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -581,7 +499,6 @@ function setupKeyboard() {
       deleteSelected();
     }
 
-    // Tool shortcuts
     if (e.key === 'v' || e.key === 'V') setTool('select');
     if (e.key === 'a' || e.key === 'A') setTool('actor');
     if (e.key === 'm' || e.key === 'M') setTool('actor-arrow');
@@ -602,7 +519,5 @@ function setStatus(msg) {
 
 // ── PWA Service Worker Registration ──
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {
-    // Service worker registration failed — app still works
-  });
+  navigator.serviceWorker.register('sw.js').catch(() => {});
 }

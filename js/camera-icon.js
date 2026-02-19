@@ -1,6 +1,6 @@
 /**
- * Camera Icon — Classic movie camera: body + viewfinder + two film reels
- * Group layout: [0]=cone, [1]=body, [2]=viewfinder, [3]=largeReel, [4]=smallReel, [5]=label
+ * Camera Icon — Simple video camera: body + lens triangle
+ * Group layout: [0]=cone, [1]=body, [2]=lens, [3]=label
  */
 
 import { getCanvas } from './canvas-manager.js';
@@ -20,52 +20,34 @@ export function createCameraIcon(x, y, options = {}) {
 
   const cone = buildCone(fov, coneLength, color);
 
-  // Camera body (main rectangle)
+  // Camera body (rounded rectangle)
   const body = new fabric.Rect({
-    width: 28,
+    width: 26,
     height: 20,
     fill: color,
-    rx: 2,
-    ry: 2,
+    stroke: darkenColor(color, 0.3),
+    strokeWidth: 1.5,
+    rx: 3,
+    ry: 3,
     originX: 'center',
     originY: 'center',
-    left: -3,
-    top: 4,
+    left: -6,
+    top: 0,
   });
 
-  // Viewfinder / lens triangle (pointing right)
-  const viewfinder = new fabric.Polygon([
-    { x: 0, y: -8 },
-    { x: 12, y: 0 },
-    { x: 0, y: 8 },
+  // Lens triangle (pointing right)
+  const lens = new fabric.Polygon([
+    { x: 0, y: -7 },
+    { x: 10, y: 0 },
+    { x: 0, y: 7 },
   ], {
     fill: color,
+    stroke: darkenColor(color, 0.3),
+    strokeWidth: 1.5,
     originX: 'center',
     originY: 'center',
-    left: 16,
-    top: 4,
-  });
-
-  // Large film reel (back, top-left)
-  const largeReel = new fabric.Circle({
-    radius: 8,
-    fill: color,
-    stroke: null,
-    originX: 'center',
-    originY: 'center',
-    left: -8,
-    top: -10,
-  });
-
-  // Small film reel (front, top-right)
-  const smallReel = new fabric.Circle({
-    radius: 6,
-    fill: color,
-    stroke: null,
-    originX: 'center',
-    originY: 'center',
-    left: 5,
-    top: -8,
+    left: 13,
+    top: 0,
   });
 
   // Label text (up to 4 chars, e.g. CAM1)
@@ -76,12 +58,12 @@ export function createCameraIcon(x, y, options = {}) {
     fill: '#fff',
     originX: 'center',
     originY: 'top',
-    top: 18,
+    top: 14,
     left: 0,
     visible: label.length > 0,
   });
 
-  const group = new fabric.Group([cone, body, viewfinder, largeReel, smallReel, labelText], {
+  const group = new fabric.Group([cone, body, lens, labelText], {
     left: x,
     top: y,
     originX: 'center',
@@ -137,18 +119,24 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+function darkenColor(hex, amount) {
+  const r = Math.max(0, Math.round(parseInt(hex.slice(1, 3), 16) * (1 - amount)));
+  const g = Math.max(0, Math.round(parseInt(hex.slice(3, 5), 16) * (1 - amount)));
+  const b = Math.max(0, Math.round(parseInt(hex.slice(5, 7), 16) * (1 - amount)));
+  return `rgb(${r},${g},${b})`;
+}
+
 export function updateCameraColor(camera, newColor) {
   if (!camera || camera.objectType !== 'camera') return;
   const objects = camera.getObjects();
-  // [0]=cone, [1]=body, [2]=viewfinder, [3]=largeReel, [4]=smallReel, [5]=label
+  // [0]=cone, [1]=body, [2]=lens, [3]=label
   objects[0].set({
     fill: hexToRgba(newColor, 0.2),
     stroke: hexToRgba(newColor, 0.5),
   });
-  objects[1].set('fill', newColor); // body
-  objects[2].set('fill', newColor); // viewfinder
-  objects[3].set('fill', newColor); // large reel
-  objects[4].set('fill', newColor); // small reel
+  const border = darkenColor(newColor, 0.3);
+  objects[1].set({ fill: newColor, stroke: border }); // body
+  objects[2].set({ fill: newColor, stroke: border }); // lens
   camera.cameraColor = newColor;
   camera.dirty = true;
   getCanvas().requestRenderAll();
@@ -185,8 +173,8 @@ export function updateCameraConeLength(camera, newLength) {
 export function updateCameraLabel(camera, newLabel) {
   if (!camera || camera.objectType !== 'camera') return;
   const objects = camera.getObjects();
-  // [5] = label text
-  objects[5].set({ text: newLabel, visible: newLabel.length > 0 });
+  // [3] = label text
+  objects[3].set({ text: newLabel, visible: newLabel.length > 0 });
   camera.cameraLabel = newLabel;
   camera.dirty = true;
   getCanvas().requestRenderAll();

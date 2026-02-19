@@ -76,6 +76,12 @@ function prepareForExport(canvas) {
 }
 
 function restoreAfterExport(canvas) {
+  // Restore arrow control points
+  canvas.getObjects().forEach(o => {
+    if (o.arrowId && (o.objectType === 'controlPoint' || o.objectType === 'startPoint' || o.objectType === 'endPoint')) {
+      o.set({ visible: true });
+    }
+  });
   canvas.requestRenderAll();
 }
 

@@ -44,12 +44,12 @@ export function createMovementArrow(startX, startY, endX, endY, options = {}) {
   // Build the path and arrowhead
   const { path, arrowHead } = buildArrowObjects(arrowData);
 
-  // Control point circle (for editing)
+  // Control point circle (always visible, black)
   const controlPoint = new fabric.Circle({
     left: arrowData.cpX,
     top: arrowData.cpY,
     radius: CONTROL_POINT_RADIUS,
-    fill: '#0d6efd',
+    fill: '#000000',
     stroke: '#fff',
     strokeWidth: 2,
     originX: 'center',
@@ -57,7 +57,7 @@ export function createMovementArrow(startX, startY, endX, endY, options = {}) {
     hasControls: false,
     hasBorders: false,
     padding: CONTROL_POINT_HIT_PADDING,
-    visible: false, // Only visible when arrow is selected
+    visible: true,
     objectType: 'controlPoint',
     evented: true,
   });
@@ -67,7 +67,7 @@ export function createMovementArrow(startX, startY, endX, endY, options = {}) {
     left: arrowData.startX,
     top: arrowData.startY,
     radius: 5,
-    fill: '#0d6efd',
+    fill: '#000000',
     stroke: '#fff',
     strokeWidth: 2,
     originX: 'center',
@@ -75,7 +75,7 @@ export function createMovementArrow(startX, startY, endX, endY, options = {}) {
     hasControls: false,
     hasBorders: false,
     padding: CONTROL_POINT_HIT_PADDING,
-    visible: false,
+    visible: true,
     objectType: 'startPoint',
     evented: true,
   });
@@ -85,7 +85,7 @@ export function createMovementArrow(startX, startY, endX, endY, options = {}) {
     left: arrowData.endX,
     top: arrowData.endY,
     radius: 5,
-    fill: '#0d6efd',
+    fill: '#000000',
     stroke: '#fff',
     strokeWidth: 2,
     originX: 'center',
@@ -93,7 +93,7 @@ export function createMovementArrow(startX, startY, endX, endY, options = {}) {
     hasControls: false,
     hasBorders: false,
     padding: CONTROL_POINT_HIT_PADDING,
-    visible: false,
+    visible: true,
     objectType: 'endPoint',
     evented: true,
   });
