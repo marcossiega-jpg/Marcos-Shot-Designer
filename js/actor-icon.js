@@ -117,7 +117,7 @@ export function renderActorProperties(actor) {
   container.innerHTML = `
     <div class="prop-group">
       <label class="prop-label">Label</label>
-      <input type="text" class="prop-input" id="actor-label" value="${actor.actorLabel}" maxlength="3">
+      <input type="text" class="prop-input" id="actor-label" value="${actor.actorLabel}" maxlength="4">
     </div>
     <div class="prop-group">
       <label class="prop-label">Color</label>

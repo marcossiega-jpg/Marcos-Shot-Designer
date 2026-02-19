@@ -1,11 +1,18 @@
 /**
- * Touch Handler — Pinch-zoom, two-finger pan
+ * Touch Handler — Pinch-zoom, two-finger pan, pinch-resize objects
  * Attaches to wrapper div to avoid Fabric.js conflicts
+ *
+ * When two fingers pinch over a selected actor/camera, the object
+ * is scaled instead of zooming the canvas.
  */
 
 import { getCanvas, getZoom, setZoom, panBy } from './canvas-manager.js';
+import { saveState } from './history-manager.js';
 
 let isPinching = false;
+let isResizingObject = false;
+let resizeTarget = null;
+let resizeStartScale = 1;
 let lastPinchDist = 0;
 let lastPinchCenter = null;
 let longPressTimer = null;
@@ -37,10 +44,21 @@ function onTouchStart(e) {
     lastPinchDist = getDist(t1, t2);
     lastPinchCenter = getMidpoint(t1, t2);
 
-    // Disable Fabric.js interaction during pinch
     const canvas = getCanvas();
-    canvas.selection = false;
-    canvas.forEachObject(o => { o.evented = false; });
+    const active = canvas.getActiveObject();
+
+    // If there's a selected actor or camera, resize it instead of zooming
+    if (active && (active.objectType === 'actor' || active.objectType === 'camera')) {
+      isResizingObject = true;
+      resizeTarget = active;
+      resizeStartScale = active.scaleX || 1;
+    } else {
+      isResizingObject = false;
+      resizeTarget = null;
+      // Disable Fabric.js interaction during canvas pinch-zoom
+      canvas.selection = false;
+      canvas.forEachObject(o => { o.evented = false; });
+    }
   } else if (e.touches.length === 1) {
     // Long press detection
     const touch = e.touches[0];
@@ -63,18 +81,28 @@ function onTouchMove(e) {
     const dist = getDist(t1, t2);
     const center = getMidpoint(t1, t2);
 
-    // Zoom
-    const scaleFactor = dist / lastPinchDist;
-    const newZoom = getZoom() * scaleFactor;
-    const wrapper = document.getElementById('canvas-wrapper');
-    const rect = wrapper.getBoundingClientRect();
-    const point = new fabric.Point(center.x - rect.left, center.y - rect.top);
-    setZoom(newZoom, point);
+    if (isResizingObject && resizeTarget) {
+      // Resize the selected object based on pinch distance change
+      const scaleFactor = dist / lastPinchDist;
+      const currentScale = resizeTarget.scaleX || 1;
+      const newScale = Math.max(0.3, Math.min(5, currentScale * scaleFactor));
+      resizeTarget.set({ scaleX: newScale, scaleY: newScale });
+      resizeTarget.setCoords();
+      resizeTarget.dirty = true;
+      getCanvas().requestRenderAll();
+    } else {
+      // Normal canvas zoom + pan
+      const scaleFactor = dist / lastPinchDist;
+      const newZoom = getZoom() * scaleFactor;
+      const wrapper = document.getElementById('canvas-wrapper');
+      const rect = wrapper.getBoundingClientRect();
+      const point = new fabric.Point(center.x - rect.left, center.y - rect.top);
+      setZoom(newZoom, point);
 
-    // Pan
-    const dx = center.x - lastPinchCenter.x;
-    const dy = center.y - lastPinchCenter.y;
-    panBy(dx, dy);
+      const dx = center.x - lastPinchCenter.x;
+      const dy = center.y - lastPinchCenter.y;
+      panBy(dx, dy);
+    }
 
     lastPinchDist = dist;
     lastPinchCenter = center;
@@ -88,10 +116,18 @@ function onTouchEnd(e) {
 
   if (e.touches.length < 2 && isPinching) {
     isPinching = false;
-    // Re-enable Fabric.js interaction
-    const canvas = getCanvas();
-    canvas.selection = true;
-    canvas.forEachObject(o => { o.evented = true; });
+
+    if (isResizingObject && resizeTarget) {
+      // Save undo state after resize completes
+      saveState();
+      isResizingObject = false;
+      resizeTarget = null;
+    } else {
+      // Re-enable Fabric.js interaction after canvas zoom/pan
+      const canvas = getCanvas();
+      canvas.selection = true;
+      canvas.forEachObject(o => { o.evented = true; });
+    }
   }
 }
 
