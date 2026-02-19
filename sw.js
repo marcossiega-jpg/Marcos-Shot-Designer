@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shot-designer-v8';
+const CACHE_NAME = 'shot-designer-v9';
 const ASSETS = [
   './',
   './index.html',
