@@ -112,7 +112,10 @@
       <!-- Character Roster Section (always visible) -->
       <div id="roster-section">
         <div class="panel-header">
-          <span>Characters</span>
+          <div class="roster-type-toggle" id="roster-type-toggle">
+            <button class="roster-type-btn active" data-type="actor">Actor</button>
+            <button class="roster-type-btn" data-type="camera">Camera</button>
+          </div>
           <button id="btn-add-character" class="icon-btn" title="Add Character">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
@@ -121,12 +124,6 @@
         <!-- Inline add form (hidden by default) -->
         <div id="roster-form" class="hidden">
           <div class="roster-form-inner">
-            <div class="prop-group">
-              <div class="roster-type-toggle" id="roster-type-toggle">
-                <button class="roster-type-btn active" data-type="actor">Actor</button>
-                <button class="roster-type-btn" data-type="camera">Camera</button>
-              </div>
-            </div>
             <div class="prop-group">
               <label class="prop-label">Name</label>
               <input type="text" class="prop-input" id="roster-name" placeholder="e.g. Detective Morgan" maxlength="30">

@@ -47,6 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupToolbar() {
   document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
     btn.addEventListener('click', () => {
+      // Reset to generic white when using toolbar buttons directly
+      if (btn.dataset.tool === 'actor') {
+        actorConfig = { color: '#ffffff', label: '' };
+        clearActiveCharacter();
+      } else if (btn.dataset.tool === 'camera') {
+        cameraConfig = { color: '#ffffff', label: '' };
+        clearActiveCharacter();
+      }
       setTool(btn.dataset.tool);
     });
   });
