@@ -40,7 +40,6 @@ export function saveState() {
     'objectType', 'actorColor', 'actorLabel',
     'cameraColor', 'cameraFov', 'cameraConeLength', 'cameraLabel',
     'arrowId', 'arrowColor', 'arrowData',
-    'trailId', 'trailSegmentIndex', 'trailSegmentData',
     'textColor', 'textFontSize',
   ]);
 

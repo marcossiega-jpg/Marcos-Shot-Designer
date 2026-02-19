@@ -4,7 +4,6 @@
 
 import { getCanvas } from './canvas-manager.js';
 import { showArrowHandles } from './movement-arrow.js';
-import { hideTrailControlPoints, showTrailControlPoints } from './trail-manager.js';
 
 export function exportPNG() {
   const canvas = getCanvas();
@@ -73,14 +72,10 @@ function prepareForExport(canvas) {
     }
   });
 
-  // Hide trail control points
-  hideTrailControlPoints();
-
   canvas.requestRenderAll();
 }
 
 function restoreAfterExport(canvas) {
-  showTrailControlPoints();
   canvas.requestRenderAll();
 }
 

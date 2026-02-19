@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shot-designer-v3';
+const CACHE_NAME = 'shot-designer-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -12,7 +12,6 @@ const ASSETS = [
   './js/movement-arrow.js',
   './js/export-manager.js',
   './js/history-manager.js',
-  './js/trail-manager.js',
   './js/text-tool.js',
   './manifest.json',
 ];

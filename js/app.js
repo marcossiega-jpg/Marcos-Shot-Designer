@@ -8,7 +8,6 @@ import { initPdfLoader, goToPage, getCurrentPage, getTotalPages, isPdf } from '.
 import { createActorIcon, renderActorProperties } from './actor-icon.js';
 import { createCameraIcon, renderCameraProperties } from './camera-icon.js';
 import { createMovementArrow, showArrowHandles, removeArrow, renderArrowProperties } from './movement-arrow.js';
-import { initTrailManager, selectTrailControlPoint, removeTrail } from './trail-manager.js';
 import { placeText, renderTextProperties } from './text-tool.js';
 import { exportPNG, exportPDF } from './export-manager.js';
 import { initHistory, undo, redo, saveState } from './history-manager.js';
@@ -32,8 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initPdfLoader(handlePageChange);
 
   initHistory(handleHistoryState);
-
-  initTrailManager();
 
   setupToolbar();
   setupActorPopover();
@@ -102,12 +99,8 @@ function setTool(tool) {
 function setInteractive(enabled) {
   const canvas = getCanvas();
   canvas.forEachObject(o => {
-    // Always keep these interactive
+    // Always keep arrow handles interactive
     if (o.objectType === 'controlPoint' || o.objectType === 'startPoint' || o.objectType === 'endPoint') return;
-    if (o.objectType === 'trailControlPoint') return;
-
-    // Trail ghosts and arrowheads are never interactive
-    if (o.objectType === 'trailGhost' || o.objectType === 'trailArrowHead') return;
 
     o.selectable = enabled;
     o.evented = enabled;
@@ -116,8 +109,9 @@ function setInteractive(enabled) {
 
 function getToolStatus(tool) {
   switch (tool) {
-    case 'select': return 'Select mode — drag actors to create movement trails';
+    case 'select': return 'Select mode — tap objects to select';
     case 'actor': return 'Actor mode — pick color/label, then double-tap to place';
+    case 'actor-arrow': return 'Actor movement — tap start, then tap end (dotted arrow)';
     case 'camera': return 'Camera mode — double-tap to place camera';
     case 'camera-arrow': return 'Camera movement — tap start, then tap end (black arrow)';
     case 'text': return 'Text mode — double-tap to place text, use Apple Pencil to write';
@@ -264,13 +258,6 @@ function setupCanvasEvents(canvas) {
     const now = Date.now();
     const pointer = canvas.getPointer(opt.e);
 
-    // In select mode: clicking a trail line selects its control point for dragging
-    if (currentTool === 'select' && opt.target && opt.target.objectType === 'trailLine') {
-      selectTrailControlPoint(opt.target);
-      lastPlaceTapTime = 0;
-      return;
-    }
-
     // Double-tap on existing object → open properties (in any mode)
     if (opt.target && now - lastPlaceTapTime < 400) {
       openProperties(opt.target);
@@ -278,7 +265,14 @@ function setupCanvasEvents(canvas) {
       return;
     }
 
-    // Camera arrow: single-tap start, single-tap end (two-tap system)
+    // Actor arrow: single-tap start, single-tap end (two-tap, dotted)
+    if (currentTool === 'actor-arrow' && !opt.target) {
+      handleActorArrowTap(pointer.x, pointer.y);
+      lastPlaceTapTime = 0;
+      return;
+    }
+
+    // Camera arrow: single-tap start, single-tap end (two-tap, solid black)
     if (currentTool === 'camera-arrow' && !opt.target) {
       handleCameraArrowTap(pointer.x, pointer.y);
       lastPlaceTapTime = 0;
@@ -353,7 +347,25 @@ function placeCamera(x, y) {
   setStatus('Camera placed');
 }
 
-// ── Camera Arrow (two-tap: start → end) ──
+// ── Actor Arrow (two-tap: start → end, dotted) ──
+function handleActorArrowTap(x, y) {
+  if (!arrowStartPoint) {
+    arrowStartPoint = { x, y };
+    showArrowStartIndicator(x, y);
+    setStatus('Actor movement: tap end point');
+  } else {
+    removeArrowStartIndicator();
+    createMovementArrow(arrowStartPoint.x, arrowStartPoint.y, x, y, {
+      color: actorConfig.color,
+      strokeDashArray: [6, 4],
+    });
+    arrowStartPoint = null;
+    saveState();
+    setStatus('Actor arrow created — tap to place another');
+  }
+}
+
+// ── Camera Arrow (two-tap: start → end, solid black) ──
 function handleCameraArrowTap(x, y) {
   if (!arrowStartPoint) {
     arrowStartPoint = { x, y };
@@ -445,21 +457,9 @@ function deleteSelected() {
   const active = canvas.getActiveObject();
   if (!active) return;
 
-  // Movement arrows (camera arrows)
+  // Movement arrows
   if (active.objectType === 'movementArrow') {
     removeArrow(active.arrowId);
-  // Trail-connected objects: delete entire trail chain
-  } else if (active.trailId && (
-    active.objectType === 'trailLine' ||
-    active.objectType === 'trailGhost' ||
-    active.objectType === 'trailArrowHead' ||
-    active.objectType === 'trailControlPoint'
-  )) {
-    removeTrail(active.trailId);
-  } else if (active.objectType === 'actor' && active.trailId) {
-    // Actor with trails: remove trails too
-    removeTrail(active.trailId);
-    canvas.remove(active);
   } else {
     canvas.remove(active);
   }
@@ -584,6 +584,7 @@ function setupKeyboard() {
     // Tool shortcuts
     if (e.key === 'v' || e.key === 'V') setTool('select');
     if (e.key === 'a' || e.key === 'A') setTool('actor');
+    if (e.key === 'm' || e.key === 'M') setTool('actor-arrow');
     if (e.key === 'c' || e.key === 'C') setTool('camera');
     if (e.key === 'b' || e.key === 'B') setTool('camera-arrow');
     if (e.key === 't' || e.key === 'T') setTool('text');

@@ -19,6 +19,7 @@ const PRESET_COLORS = [
 export function createMovementArrow(startX, startY, endX, endY, options = {}) {
   const color = options.color || '#e74c3c';
   const lineWidth = options.lineWidth || 2.5;
+  const strokeDashArray = options.strokeDashArray || null;
 
   // Initial control point: midpoint, offset perpendicular to line
   const midX = (startX + endX) / 2;
@@ -37,6 +38,7 @@ export function createMovementArrow(startX, startY, endX, endY, options = {}) {
     cpY: offsetY,
     color,
     lineWidth,
+    strokeDashArray,
   };
 
   // Build the path and arrowhead
@@ -129,17 +131,19 @@ export function createMovementArrow(startX, startY, endX, endY, options = {}) {
 }
 
 function buildArrowObjects(data) {
-  const { startX, startY, endX, endY, cpX, cpY, color, lineWidth } = data;
+  const { startX, startY, endX, endY, cpX, cpY, color, lineWidth, strokeDashArray } = data;
 
   // Quadratic Bezier path
   const pathStr = `M ${startX} ${startY} Q ${cpX} ${cpY} ${endX} ${endY}`;
-  const path = new fabric.Path(pathStr, {
+  const pathOpts = {
     fill: null,
     stroke: color,
     strokeWidth: lineWidth,
     strokeLineCap: 'round',
     objectCaching: false,
-  });
+  };
+  if (strokeDashArray) pathOpts.strokeDashArray = strokeDashArray;
+  const path = new fabric.Path(pathStr, pathOpts);
 
   // Arrowhead: calculate tangent at endpoint
   // Derivative of Q(t) at t=1: 2(1-t)(P1-P0) + 2t(P2-P1) at t=1 → 2(P2-P1)
@@ -228,7 +232,7 @@ function setupControlPointDrag(arrowId) {
 
 function rebuildArrow(parts, data) {
   const canvas = getCanvas();
-  const { startX, startY, endX, endY, cpX, cpY, color, lineWidth } = data;
+  const { startX, startY, endX, endY, cpX, cpY, color, lineWidth, strokeDashArray } = data;
 
   // Remove old path and arrowhead, replace with new ones
   const arrowId = parts.path.arrowId;
@@ -239,13 +243,15 @@ function rebuildArrow(parts, data) {
 
   // Build new path
   const pathStr = `M ${startX} ${startY} Q ${cpX} ${cpY} ${endX} ${endY}`;
-  const newPath = new fabric.Path(pathStr, {
+  const pathOpts = {
     fill: null,
     stroke: color,
     strokeWidth: lineWidth,
     strokeLineCap: 'round',
     objectCaching: false,
-  });
+  };
+  if (strokeDashArray) pathOpts.strokeDashArray = strokeDashArray;
+  const newPath = new fabric.Path(pathStr, pathOpts);
   newPath.arrowId = arrowId;
   newPath.objectType = 'movementArrow';
   newPath.arrowColor = color;
