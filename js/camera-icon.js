@@ -1,12 +1,13 @@
 /**
- * Camera Icon — Simple video camera: body + lens triangle
- * Group layout: [0]=cone, [1]=body, [2]=lens, [3]=label
+ * Camera Icon — Triangle representing camera field of view
+ * Wide base = front (filming direction), apex = back (camera position)
+ * Group layout: [0]=triangle, [1]=label
  */
 
 import { getCanvas } from './canvas-manager.js';
 
 const DEFAULT_FOV = 45;
-const DEFAULT_CONE_LENGTH = 100;
+const DEFAULT_CONE_LENGTH = 80;
 const PRESET_COLORS = [
   '#e74c3c', '#3498db', '#2ecc71', '#f1c40f',
   '#e67e22', '#9b59b6', '#1abc9c', '#e91e63',
@@ -18,52 +19,21 @@ export function createCameraIcon(x, y, options = {}) {
   const coneLength = options.coneLength || DEFAULT_CONE_LENGTH;
   const label = options.label || '';
 
-  const cone = buildCone(fov, coneLength, color);
+  const triangle = buildTriangle(fov, coneLength, color);
 
-  // Camera body (rounded rectangle)
-  const body = new fabric.Rect({
-    width: 26,
-    height: 20,
-    fill: color,
-    stroke: darkenColor(color, 0.3),
-    strokeWidth: 1.5,
-    rx: 3,
-    ry: 3,
-    originX: 'center',
-    originY: 'center',
-    left: -6,
-    top: 0,
-  });
-
-  // Lens triangle (pointing right)
-  const lens = new fabric.Polygon([
-    { x: 0, y: -7 },
-    { x: 10, y: 0 },
-    { x: 0, y: 7 },
-  ], {
-    fill: color,
-    stroke: darkenColor(color, 0.3),
-    strokeWidth: 1.5,
-    originX: 'center',
-    originY: 'center',
-    left: 13,
-    top: 0,
-  });
-
-  // Label text (up to 4 chars, e.g. CAM1)
   const labelText = new fabric.FabricText(label, {
     fontSize: 10,
     fontWeight: 'bold',
     fontFamily: '-apple-system, sans-serif',
     fill: '#fff',
     originX: 'center',
-    originY: 'top',
-    top: 14,
+    originY: 'center',
+    top: coneLength * 0.2,
     left: 0,
     visible: label.length > 0,
   });
 
-  const group = new fabric.Group([cone, body, lens, labelText], {
+  const group = new fabric.Group([triangle, labelText], {
     left: x,
     top: y,
     originX: 'center',
@@ -88,28 +58,24 @@ export function createCameraIcon(x, y, options = {}) {
   return group;
 }
 
-function buildCone(fov, length, color) {
+function buildTriangle(fov, length, color) {
   const halfAngle = (fov / 2) * (Math.PI / 180);
-  const leftX = -Math.sin(halfAngle) * length;
-  const rightX = Math.sin(halfAngle) * length;
+  const halfWidth = Math.tan(halfAngle) * length;
 
-  const rgbaColor = hexToRgba(color, 0.2);
-  const strokeColor = hexToRgba(color, 0.5);
-
-  const cone = new fabric.Triangle({
-    width: Math.abs(leftX - rightX),
-    height: length,
-    fill: rgbaColor,
-    stroke: strokeColor,
-    strokeWidth: 1,
+  // Apex at bottom (camera position / back), wide base at top (filming direction / front)
+  const triangle = new fabric.Polygon([
+    { x: 0, y: length / 2 },
+    { x: -halfWidth, y: -length / 2 },
+    { x: halfWidth, y: -length / 2 },
+  ], {
+    fill: hexToRgba(color, 0.25),
+    stroke: color,
+    strokeWidth: 1.5,
     originX: 'center',
-    originY: 'bottom',
-    left: 0,
-    top: -length / 2 + 2,
-    angle: 180,
+    originY: 'center',
   });
 
-  return cone;
+  return triangle;
 }
 
 function hexToRgba(hex, alpha) {
@@ -119,24 +85,14 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function darkenColor(hex, amount) {
-  const r = Math.max(0, Math.round(parseInt(hex.slice(1, 3), 16) * (1 - amount)));
-  const g = Math.max(0, Math.round(parseInt(hex.slice(3, 5), 16) * (1 - amount)));
-  const b = Math.max(0, Math.round(parseInt(hex.slice(5, 7), 16) * (1 - amount)));
-  return `rgb(${r},${g},${b})`;
-}
-
 export function updateCameraColor(camera, newColor) {
   if (!camera || camera.objectType !== 'camera') return;
   const objects = camera.getObjects();
-  // [0]=cone, [1]=body, [2]=lens, [3]=label
+  // [0]=triangle, [1]=label
   objects[0].set({
-    fill: hexToRgba(newColor, 0.2),
-    stroke: hexToRgba(newColor, 0.5),
+    fill: hexToRgba(newColor, 0.25),
+    stroke: newColor,
   });
-  const border = darkenColor(newColor, 0.3);
-  objects[1].set({ fill: newColor, stroke: border }); // body
-  objects[2].set({ fill: newColor, stroke: border }); // lens
   camera.cameraColor = newColor;
   camera.dirty = true;
   getCanvas().requestRenderAll();
@@ -147,11 +103,10 @@ export function updateCameraFov(camera, newFov) {
   camera.cameraFov = newFov;
 
   const objects = camera.getObjects();
-  const oldCone = objects[0];
-  const newCone = buildCone(newFov, camera.cameraConeLength, camera.cameraColor);
-  newCone.set({ left: oldCone.left });
-  camera.remove(oldCone);
-  camera.insertAt(0, newCone);
+  const oldTriangle = objects[0];
+  const newTriangle = buildTriangle(newFov, camera.cameraConeLength, camera.cameraColor);
+  camera.remove(oldTriangle);
+  camera.insertAt(0, newTriangle);
   camera.dirty = true;
   getCanvas().requestRenderAll();
 }
@@ -161,11 +116,10 @@ export function updateCameraConeLength(camera, newLength) {
   camera.cameraConeLength = newLength;
 
   const objects = camera.getObjects();
-  const oldCone = objects[0];
-  const newCone = buildCone(camera.cameraFov, newLength, camera.cameraColor);
-  newCone.set({ left: oldCone.left });
-  camera.remove(oldCone);
-  camera.insertAt(0, newCone);
+  const oldTriangle = objects[0];
+  const newTriangle = buildTriangle(camera.cameraFov, newLength, camera.cameraColor);
+  camera.remove(oldTriangle);
+  camera.insertAt(0, newTriangle);
   camera.dirty = true;
   getCanvas().requestRenderAll();
 }
@@ -173,8 +127,8 @@ export function updateCameraConeLength(camera, newLength) {
 export function updateCameraLabel(camera, newLabel) {
   if (!camera || camera.objectType !== 'camera') return;
   const objects = camera.getObjects();
-  // [3] = label text
-  objects[3].set({ text: newLabel, visible: newLabel.length > 0 });
+  // [1] = label
+  objects[1].set({ text: newLabel, visible: newLabel.length > 0 });
   camera.cameraLabel = newLabel;
   camera.dirty = true;
   getCanvas().requestRenderAll();
@@ -202,19 +156,16 @@ export function renderCameraProperties(camera) {
     </div>
   `;
 
-  // Label
   document.getElementById('cam-label').addEventListener('input', (e) => {
     updateCameraLabel(camera, e.target.value);
   });
 
-  // FOV slider
   document.getElementById('cam-fov').addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
     document.getElementById('fov-val').textContent = val;
     updateCameraFov(camera, val);
   });
 
-  // Cone length slider
   document.getElementById('cam-cone').addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
     document.getElementById('cone-val').textContent = val;

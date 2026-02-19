@@ -188,7 +188,7 @@ export function renderRoster() {
   listEl.innerHTML = characters.map(char => {
     const isCamera = char.type === 'camera';
     const iconContent = isCamera
-      ? `<svg width="16" height="14" viewBox="0 0 26 20" fill="${char.color}" stroke="none"><rect width="18" height="16" rx="2" /><polygon points="18,3 26,0 26,16 18,13"/></svg>`
+      ? `<svg width="16" height="16" viewBox="0 0 20 20" fill="${char.color}" fill-opacity="0.4" stroke="${char.color}" stroke-width="1.5"><polygon points="10,18 1,2 19,2"/></svg>`
       : escapeHtml(char.label);
 
     return `
