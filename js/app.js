@@ -7,7 +7,7 @@ import { initTouchHandler } from './touch-handler.js';
 import { initPdfLoader, goToPage, getCurrentPage, getTotalPages, isPdf } from './pdf-loader.js';
 import { createActorIcon, renderActorProperties } from './actor-icon.js';
 import { createCameraIcon, renderCameraProperties } from './camera-icon.js';
-import { createMovementArrow, removeArrow, renderArrowProperties } from './movement-arrow.js';
+import { createMovementArrow, removeArrow, renderArrowProperties, addControlPointToArrow } from './movement-arrow.js';
 import { placeText, renderTextProperties } from './text-tool.js';
 import { initRoster, clearActiveCharacter } from './character-roster.js';
 import { exportJPEG, exportPDF } from './export-manager.js';
@@ -513,6 +513,16 @@ function handleLongPress(clientX, clientY) {
   const canvas = getCanvas();
   const target = canvas.findTarget({ clientX, clientY }, false);
   if (!target) return;
+
+  // Long-press on a movement arrow → add a new control point
+  if (target.objectType === 'movementArrow') {
+    const pointer = canvas.getPointer(new PointerEvent('pointermove', { clientX, clientY }));
+    addControlPointToArrow(target.arrowId, pointer.x, pointer.y);
+    saveState();
+    setStatus('Control point added — drag to shape the curve');
+    return;
+  }
+
   showContextMenu(clientX, clientY, target);
 }
 
