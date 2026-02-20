@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dosl-v1';
+const CACHE_NAME = 'dosl-v2';
 const ASSETS = [
   './',
   './index.html',

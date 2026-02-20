@@ -78,7 +78,49 @@
               <div class="popover-swatch" style="background:#f1c40f" data-color="#f1c40f"></div>
               <div class="popover-swatch" style="background:#e67e22" data-color="#e67e22"></div>
               <div class="popover-swatch" style="background:#9b59b6" data-color="#9b59b6"></div>
-              <div class="popover-swatch" style="background:#000000" data-color="#000000"></div>
+              <div class="popover-swatch" style="background:#1abc9c" data-color="#1abc9c"></div>
+              <div class="popover-swatch" style="background:#e91e63" data-color="#e91e63"></div>
+              <div class="popover-swatch" style="background:#808080" data-color="#808080"></div>
+              <div class="popover-swatch" style="background:#1a3a5c" data-color="#1a3a5c"></div>
+              <div class="popover-swatch" style="background:#1e5631" data-color="#1e5631"></div>
+              <div class="popover-swatch" style="background:#8b4513" data-color="#8b4513"></div>
+              <div class="popover-swatch" style="background:#d4b896;border:1px solid #666" data-color="#d4b896"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="position:relative">
+        <button class="tool-btn" data-tool="draw" title="Draw">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+        </button>
+        <!-- Draw config popover -->
+        <div id="draw-popover" class="tool-popover hidden">
+          <div class="popover-section">
+            <label class="popover-label">Color</label>
+            <div class="popover-swatches" id="draw-config-colors">
+              <div class="popover-swatch selected" style="background:#ffffff;border:1px solid #666" data-color="#ffffff"></div>
+              <div class="popover-swatch" style="background:#e74c3c" data-color="#e74c3c"></div>
+              <div class="popover-swatch" style="background:#3498db" data-color="#3498db"></div>
+              <div class="popover-swatch" style="background:#2ecc71" data-color="#2ecc71"></div>
+              <div class="popover-swatch" style="background:#f1c40f" data-color="#f1c40f"></div>
+              <div class="popover-swatch" style="background:#e67e22" data-color="#e67e22"></div>
+              <div class="popover-swatch" style="background:#9b59b6" data-color="#9b59b6"></div>
+              <div class="popover-swatch" style="background:#1abc9c" data-color="#1abc9c"></div>
+              <div class="popover-swatch" style="background:#e91e63" data-color="#e91e63"></div>
+              <div class="popover-swatch" style="background:#808080" data-color="#808080"></div>
+              <div class="popover-swatch" style="background:#1a3a5c" data-color="#1a3a5c"></div>
+              <div class="popover-swatch" style="background:#1e5631" data-color="#1e5631"></div>
+              <div class="popover-swatch" style="background:#8b4513" data-color="#8b4513"></div>
+              <div class="popover-swatch" style="background:#d4b896;border:1px solid #666" data-color="#d4b896"></div>
+            </div>
+          </div>
+          <div class="popover-section">
+            <label class="popover-label">Thickness</label>
+            <div class="thickness-options" id="draw-thickness">
+              <button class="thickness-btn" data-width="2" title="Thin"><span class="thickness-line" style="height:2px"></span></button>
+              <button class="thickness-btn active" data-width="4" title="Medium"><span class="thickness-line" style="height:4px"></span></button>
+              <button class="thickness-btn" data-width="8" title="Thick"><span class="thickness-line" style="height:8px"></span></button>
+              <button class="thickness-btn" data-width="14" title="Extra Thick"><span class="thickness-line" style="height:14px"></span></button>
             </div>
           </div>
         </div>

@@ -638,6 +638,42 @@ body.sidebar-resizing * {
   color: #fff;
 }
 
+/* === Thickness options (draw tool) === */
+.thickness-options {
+  display: flex;
+  gap: 6px;
+}
+
+.thickness-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.thickness-btn:hover {
+  background: var(--bg-hover);
+}
+
+.thickness-btn.active {
+  background: var(--bg-active);
+  border-color: var(--accent);
+}
+
+.thickness-line {
+  display: block;
+  width: 20px;
+  background: var(--text-primary);
+  border-radius: 1px;
+}
+
 /* === Fabric.js IText textarea — ensure Apple Pencil Scribble works === */
 .upper-canvas + textarea,
 canvas + textarea,

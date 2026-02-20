@@ -19,6 +19,7 @@ let arrowStartPoint = null;
 let actorConfig = { color: '#ffffff', label: '' };
 let cameraConfig = { color: '#ffffff', label: '' };
 let textConfig = { color: '#ffffff' };
+let drawConfig = { color: '#ffffff', width: 4 };
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', () => {
@@ -34,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setupToolbar();
   setupTextPopover();
+  setupDrawPopover();
   initRoster(handleCharacterSelect);
   setupTopBar();
   setupStatusBar();
@@ -77,16 +79,29 @@ function setTool(tool) {
     btn.classList.toggle('active', btn.dataset.tool === tool);
   });
 
-  // Show/hide text popover
-  const textPopover = document.getElementById('text-popover');
-  textPopover.classList.toggle('hidden', tool !== 'text');
+  // Show/hide popovers
+  document.getElementById('text-popover').classList.toggle('hidden', tool !== 'text');
+  document.getElementById('draw-popover').classList.toggle('hidden', tool !== 'draw');
 
   const canvas = getCanvas();
+
+  // Disable drawing mode unless draw tool
+  if (tool !== 'draw') {
+    canvas.isDrawingMode = false;
+  }
+
   if (tool === 'select') {
     canvas.selection = true;
     canvas.defaultCursor = 'default';
     canvas.hoverCursor = 'move';
     setInteractive(true);
+  } else if (tool === 'draw') {
+    canvas.selection = false;
+    canvas.isDrawingMode = true;
+    canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+    canvas.freeDrawingBrush.color = drawConfig.color;
+    canvas.freeDrawingBrush.width = drawConfig.width;
+    setInteractive(false);
   } else {
     canvas.selection = false;
     canvas.defaultCursor = 'crosshair';
@@ -114,6 +129,7 @@ function getToolStatus(tool) {
     case 'camera': return 'Camera mode — double-tap to place';
     case 'camera-arrow': return 'Camera movement — tap start, then tap end';
     case 'text': return 'Text mode — double-tap to place text';
+    case 'draw': return 'Draw mode — draw freely on the canvas';
     default: return '';
   }
 }
@@ -130,6 +146,39 @@ function setupTextPopover() {
   });
 
   document.getElementById('text-popover').addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+}
+
+// ── Draw Popover ──
+function setupDrawPopover() {
+  const colorSwatches = document.querySelectorAll('#draw-config-colors .popover-swatch');
+  colorSwatches.forEach(swatch => {
+    swatch.addEventListener('click', () => {
+      colorSwatches.forEach(s => s.classList.remove('selected'));
+      swatch.classList.add('selected');
+      drawConfig.color = swatch.dataset.color;
+      const canvas = getCanvas();
+      if (canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.color = drawConfig.color;
+      }
+    });
+  });
+
+  const thicknessBtns = document.querySelectorAll('#draw-thickness .thickness-btn');
+  thicknessBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      thicknessBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      drawConfig.width = parseInt(btn.dataset.width);
+      const canvas = getCanvas();
+      if (canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.width = drawConfig.width;
+      }
+    });
+  });
+
+  document.getElementById('draw-popover').addEventListener('click', (e) => {
     e.stopPropagation();
   });
 }
@@ -310,6 +359,14 @@ function setupCanvasEvents(canvas) {
   canvas.on('selection:created', handleSelection);
   canvas.on('selection:updated', handleSelection);
   canvas.on('selection:cleared', handleSelectionCleared);
+
+  // Save state when freehand drawing completes
+  canvas.on('path:created', (opt) => {
+    if (opt.path) {
+      opt.path.objectType = 'drawing';
+    }
+    saveState();
+  });
 }
 
 // ── Object Placement ──
@@ -542,6 +599,7 @@ function setupKeyboard() {
     if (e.key === 'c' || e.key === 'C') setTool('camera');
     if (e.key === 'b' || e.key === 'B') setTool('camera-arrow');
     if (e.key === 't' || e.key === 'T') setTool('text');
+    if (e.key === 'd' || e.key === 'D') setTool('draw');
     if (e.key === 'Escape') {
       setTool('select');
       removeContextMenu();
